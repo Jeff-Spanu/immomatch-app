@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ImmoMatch · La Réunion</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0d0f;--surface:#16161a;--card:#1c1c22;--border:#2a2a35;
+  --gold:#d4a843;--gold2:#f0c96a;--text:#e8e6e0;--muted:#7a7880;
+  --green:#3ecf8e;--red:#f87171;--blue:#60a5fa;--amber:#fbbf24;
+}
+html,body{height:100%;font-family:'DM Mono',monospace;background:var(--bg);color:var(--text)}
+#root{height:100%}
+.app{display:flex;min-height:100vh}
+.sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:20px 0;flex-shrink:0}
+.logo{padding:0 20px 24px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.logo h1{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:var(--gold);letter-spacing:2px}
+.logo span{font-size:10px;color:var(--muted);display:block;margin-top:2px}
+.nav-btn{display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);background:none;border:none;width:100%;text-align:left;transition:all .2s;letter-spacing:.5px}
+.nav-btn:hover{color:var(--text);background:rgba(255,255,255,.04)}
+.nav-btn.active{color:var(--gold);background:rgba(212,168,67,.08);border-left:2px solid var(--gold)}
+.nav-icon{font-size:16px;width:20px;text-align:center}
+.main{flex:1;overflow:auto;padding:28px;display:flex;flex-direction:column;gap:20px}
+.topbar{display:flex;align-items:center;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.sync-bar{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-size:11px}
+.sync-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.dot-idle{background:var(--muted)}
+.dot-syncing{background:var(--amber);animation:pulse 1s infinite}
+.dot-ok{background:var(--green)}
+.dot-err{background:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.btn{padding:8px 16px;border-radius:6px;border:none;cursor:pointer;font-family:'DM Mono',monospace;font-size:11px;font-weight:500;transition:all .2s;letter-spacing:.5px}
+.btn-gold{background:var(--gold);color:#000}
+.btn-gold:hover{background:var(--gold2)}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted)}
+.btn-ghost:hover{border-color:var(--gold);color:var(--gold)}
+.btn-sm{padding:5px 10px;font-size:10px}
+.btn-red{background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.3);color:var(--red)}
+.page-header{display:flex;align-items:center;justify-content:space-between}
+.title{font-family:'Syne',sans-serif;font-weight:700;font-size:22px;color:var(--text)}
+.subtitle{font-size:11px;color:var(--muted);margin-top:3px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:700px){.stats{grid-template-columns:repeat(2,1fr)}.sidebar{width:180px}}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px}
+.stat-val{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--gold)}
+.stat-lbl{font-size:10px;color:var(--muted);margin-top:4px;letter-spacing:.8px;text-transform:uppercase}
+.section{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.section-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.section-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;letter-spacing:.5px}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:11px;min-width:600px}
+th{padding:10px 14px;text-align:left;color:var(--muted);font-weight:400;letter-spacing:.8px;text-transform:uppercase;border-bottom:1px solid var(--border)}
+td{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px}
+.ba{background:rgba(62,207,142,.15);color:var(--green)}
+.bb{background:rgba(251,191,36,.12);color:var(--amber)}
+.bc{background:rgba(120,120,136,.15);color:var(--muted)}
+.btype{background:rgba(96,165,250,.12);color:var(--blue)}
+.bstat{background:rgba(212,168,67,.1);color:var(--gold)}
+.bvis{background:rgba(62,207,142,.12);color:var(--green)}
+.td-actions{display:flex;gap:6px;align-items:center}
+.match-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin:10px 14px;display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center}
+.match-score{text-align:center}
+.match-pct{font-family:'Syne',sans-serif;font-size:22px;font-weight:800}
+.high{color:var(--green)}.med{color:var(--amber)}.low{color:var(--muted)}
+.match-lbl{font-size:10px;color:var(--muted);margin-top:2px}
+.person{font-size:11px;line-height:1.7}
+.person strong{display:block;color:var(--text);font-size:12px}
+.person span{color:var(--muted)}
+.person.right{text-align:right}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:200}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;width:500px;max-width:95vw;max-height:92vh;overflow:auto}
+.modal h2{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:20px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fg{display:flex;flex-direction:column;gap:5px}
+.fg.full{grid-column:span 2}
+label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
+input,select,textarea{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 10px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none;transition:border-color .2s;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--gold)}
+select option{background:var(--surface)}
+textarea{resize:vertical;min-height:60px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+/* SETUP */
+.setup-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;background:var(--bg)}
+.setup{max-width:540px;width:100%;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:36px}
+.setup-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:24px;color:var(--gold);letter-spacing:3px}
+.setup-sub{font-size:11px;color:var(--muted);margin-top:4px;margin-bottom:28px}
+.info-box{background:rgba(212,168,67,.08);border:1px solid rgba(212,168,67,.2);border-radius:8px;padding:12px 14px;font-size:11px;color:var(--gold2);margin-bottom:24px;line-height:1.7}
+.step-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.step-num{width:22px;height:22px;border-radius:50%;background:var(--gold);color:#000;font-size:10px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.step-desc{font-size:11px;color:var(--muted);line-height:1.8;margin-bottom:12px}
+.step-desc a{color:var(--gold);text-decoration:none}
+.step-desc a:hover{text-decoration:underline}
+.step-desc code{background:rgba(255,255,255,.07);padding:1px 6px;border-radius:4px;font-size:11px;color:var(--text)}
+.empty{text-align:center;color:var(--muted);padding:60px 0;font-size:13px}
+.pending-tag{color:var(--amber);font-size:10px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useCallback } = React;
+
+// ── DROPBOX ──────────────────────────────────────────────
+const DB_PATH = "/leads.xlsx";
+
+const dbAuth = (key) => {
+  const redirect = window.location.origin + window.location.pathname;
+  window.location.href = `https://www.dropbox.com/oauth2/authorize?client_id=${key}&response_type=token&redirect_uri=${encodeURIComponent(redirect)}&token_access_type=legacy`;
+};
+
+const getTokenFromHash = () => {
+  const p = new URLSearchParams(window.location.hash.replace('#',''));
+  const t = p.get('access_token');
+  if (t) { window.history.replaceState(null,'',window.location.pathname); return t; }
+  return null;
+};
+
+const dbDownload = async (token) => {
+  const r = await fetch('https://content.dropboxapi.com/2/files/download', {
+    method:'POST',
+    headers:{ Authorization:`Bearer ${token}`, 'Dropbox-API-Arg': JSON.stringify({path:DB_PATH}) }
+  });
+  if (r.status===409) return null;
+  if (!r.ok) throw new Error(r.status);
+  return r.arrayBuffer();
+};
+
+const dbUpload = async (token, buf) => {
+  const r = await fetch('https://content.dropboxapi.com/2/files/upload', {
+    method:'POST',
+    headers:{
+      Authorization:`Bearer ${token}`,
+      'Content-Type':'application/octet-stream',
+      'Dropbox-API-Arg': JSON.stringify({path:DB_PATH, mode:'overwrite', mute:true})
+    },
+    body: buf
+  });
+  if (!r.ok) throw new Error(r.status);
+};
+
+// ── EXCEL ─────────────────────────────────────────────────
+const parseExcel = (buf) => {
+  const wb = XLSX.read(buf,{type:'array'});
+  const sh = (n) => wb.SheetNames.includes(n) ? XLSX.utils.sheet_to_json(wb.Sheets[n]) : [];
+  const mapA = (r) => ({
+    id: r['ID']||uid('ACQ'), nom:r['Nom']||'', prenom:r['Prénom']||'', tel:r['Téléphone']||'',
+    email:r['Email']||'', type:r['Type Bien']||'Maison', budgetMin:+r['Budget Min €']||0,
+    budgetMax:+r['Budget Max €']||0, zone:r['Zone']||'', classe:r['Classe']||'B',
+    statut:r['Statut']||'Actif', notes:r['Notes']||'', createdAt:r['Créé le']||today(), role:'acquereur'
+  });
+  const mapV = (r) => ({
+    id:r['ID']||uid('VND'), nom:r['Nom']||'', prenom:r['Prénom']||'', tel:r['Téléphone']||'',
+    email:r['Email']||'', type:r['Type Bien']||'Maison', prix:+r['Prix €']||0,
+    surface:+r['Surface m²']||0, zone:r['Zone']||'', classe:r['Classe']||'B',
+    statut:r['Statut']||'Actif', notes:r['Notes']||'', createdAt:r['Créé le']||today(), role:'vendeur'
+  });
+  return { acq: sh('Acquéreurs').map(mapA), vend: sh('Vendeurs').map(mapV) };
+};
+
+const buildExcel = (acq, vend) => {
+  const wb = XLSX.utils.book_new();
+  const wsA = XLSX.utils.json_to_sheet(acq.map(a=>({
+    'ID':a.id,'Nom':a.nom,'Prénom':a.prenom,'Téléphone':a.tel,'Email':a.email,
+    'Type Bien':a.type,'Budget Min €':a.budgetMin,'Budget Max €':a.budgetMax,
+    'Zone':a.zone,'Classe':a.classe,'Statut':a.statut,'Notes':a.notes,
+    'Créé le':a.createdAt,'Modifié le':today()
+  })));
+  const wsV = XLSX.utils.json_to_sheet(vend.map(v=>({
+    'ID':v.id,'Nom':v.nom,'Prénom':v.prenom,'Téléphone':v.tel,'Email':v.email,
+    'Type Bien':v.type,'Prix €':v.prix,'Surface m²':v.surface,
+    'Zone':v.zone,'Classe':v.classe,'Statut':v.statut,'Notes':v.notes,
+    'Créé le':v.createdAt,'Modifié le':today()
+  })));
+  XLSX.utils.book_append_sheet(wb,wsA,'Acquéreurs');
+  XLSX.utils.book_append_sheet(wb,wsV,'Vendeurs');
+  return XLSX.write(wb,{type:'array',bookType:'xlsx'});
+};
+
+// ── UTILS ─────────────────────────────────────────────────
+const today = () => new Date().toISOString().slice(0,10);
+const uid = (pfx) => `${pfx}${Math.random().toString(36).slice(2,6).toUpperCase()}`;
+const fmt = (n) => n ? new Intl.NumberFormat('fr-FR').format(n)+' €' : '–';
+
+const calcScore = (a, v) => {
+  let s = 0;
+  if (a.type === v.type) s += 40;
+  if (a.zone && v.zone && a.zone.toLowerCase().split(' ')[0] === v.zone.toLowerCase().split(' ')[0]) s += 30;
+  if (v.prix >= a.budgetMin && v.prix <= a.budgetMax) s += 30;
+  else if (a.budgetMax && v.prix <= a.budgetMax * 1.1) s += 15;
+  return s;
+};
+
+// ── INITIAL DATA ──────────────────────────────────────────
+const INIT_ACQ = [
+  {id:'ACQ001',nom:'Martin',prenom:'Sophie',tel:'0692 12 34 56',email:'sophie.martin@email.re',type:'Maison',budgetMin:250000,budgetMax:350000,zone:'Saint-Pierre',classe:'A',statut:'Actif',notes:'Jardin indispensable',createdAt:'2026-05-01',role:'acquereur'},
+  {id:'ACQ002',nom:'Dijoux',prenom:'Marc',tel:'0692 98 76 54',email:'marc.dijoux@email.re',type:'Appartement',budgetMin:150000,budgetMax:200000,zone:'Saint-Denis',classe:'B',statut:'Actif',notes:'F3 min, parking',createdAt:'2026-05-03',role:'acquereur'},
+  {id:'ACQ003',nom:'Grondin',prenom:'Marie',tel:'0693 45 67 89',email:'marie.grondin@email.re',type:'Terrain',budgetMin:80000,budgetMax:120000,zone:'Le Tampon',classe:'A',statut:'Visite en cours',notes:'500m² min constructible',createdAt:'2026-04-20',role:'acquereur'},
+];
+const INIT_VEND = [
+  {id:'VND001',nom:'Payet',prenom:'Jean',tel:'0692 11 22 33',email:'jean.payet@email.re',type:'Maison',prix:320000,surface:120,zone:'Saint-Pierre',classe:'A',statut:'Actif',notes:'4ch, piscine, garage',createdAt:'2026-05-02',role:'vendeur'},
+  {id:'VND002',nom:'Ethève',prenom:'Claire',tel:'0693 33 44 55',email:'claire.etheve@email.re',type:'Appartement',prix:185000,surface:65,zone:'Saint-Denis',classe:'B',statut:'Actif',notes:'F3 vue mer, 3e étage',createdAt:'2026-05-05',role:'vendeur'},
+  {id:'VND003',nom:'Bègue',prenom:'Paul',tel:'0692 77 88 99',email:'paul.begue@email.re',type:'Terrain',prix:95000,surface:600,zone:'Le Tampon',classe:'A',statut:'Actif',notes:'Viabilisé, vue dégagée',createdAt:'2026-05-07',role:'vendeur'},
+];
+
+// ── COMPONENTS ────────────────────────────────────────────
+const Bdg = ({c}) => <span className={`badge b${c.toLowerCase()}`}>{c}</span>;
+const BType = ({t}) => <span className="badge btype">{t}</span>;
+const BStat = ({s}) => <span className={`badge ${s==='Visite en cours'?'bvis':'bstat'}`}>{s}</span>;
+
+function LeadForm({lead, isV, onSave, onClose}) {
+  const [f,setF] = useState(lead||{nom:'',prenom:'',tel:'',email:'',type:'Maison',
+    budgetMin:'',budgetMax:'',prix:'',surface:'',zone:'',classe:'B',statut:'Actif',notes:''});
+  const set = k => e => setF(p=>({...p,[k]:e.target.value}));
+  const types = ['Maison','Appartement','Terrain','Commerce','Villa'];
+  const statuts = ['Actif','Visite en cours','Compromis','Vendu','Inactif'];
+  return (
+    <div>
+      <div className="form-grid">
+        <div className="fg"><label>Nom</label><input value={f.nom} onChange={set('nom')}/></div>
+        <div className="fg"><label>Prénom</label><input value={f.prenom} onChange={set('prenom')}/></div>
+        <div className="fg"><label>Téléphone</label><input value={f.tel} onChange={set('tel')}/></div>
+        <div className="fg"><label>Email</label><input value={f.email} onChange={set('email')}/></div>
+        <div className="fg">
+          <label>Type de bien</label>
+          <select value={f.type} onChange={set('type')}>{types.map(t=><option key={t}>{t}</option>)}</select>
+        </div>
+        <div className="fg"><label>Zone / Commune</label><input value={f.zone} onChange={set('zone')}/></div>
+        {isV ? <>
+          <div className="fg"><label>Prix (€)</label><input type="number" value={f.prix} onChange={set('prix')}/></div>
+          <div className="fg"><label>Surface (m²)</label><input type="number" value={f.surface} onChange={set('surface')}/></div>
+        </> : <>
+          <div className="fg"><label>Budget min (€)</label><input type="number" value={f.budgetMin} onChange={set('budgetMin')}/></div>
+          <div className="fg"><label>Budget max (€)</label><input type="number" value={f.budgetMax} onChange={set('budgetMax')}/></div>
+        </>}
+        <div className="fg">
+          <label>Classe</label>
+          <select value={f.classe} onChange={set('classe')}><option>A</option><option>B</option><option>C</option></select>
+        </div>
+        <div className="fg">
+          <label>Statut</label>
+          <select value={f.statut} onChange={set('statut')}>{statuts.map(s=><option key={s}>{s}</option>)}</select>
+        </div>
+        <div className="fg full"><label>Notes</label><textarea value={f.notes} onChange={set('notes')}/></div>
+      </div>
+      <div className="modal-actions">
+        <button className="btn btn-ghost" onClick={onClose}>Annuler</button>
+        <button className="btn btn-gold" onClick={()=>onSave(f)}>Enregistrer</button>
+      </div>
+    </div>
+  );
+}
+
+function Modal({title, onClose, children}) {
+  return (
+    <div className="modal-bg" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="modal"><h2>{title}</h2>{children}</div>
+    </div>
+  );
+}
+
+// ── SETUP SCREEN ──────────────────────────────────────────
+function Setup({onBack}) {
+  const [key, setKey] = useState(localStorage.getItem('immo_key')||'');
+  const connect = () => {
+    if (!key.trim()) return;
+    localStorage.setItem('immo_key', key.trim());
+    dbAuth(key.trim());
+  };
+  const redirect = window.location.origin + window.location.pathname;
+  return (
+    <div className="setup-wrap">
+      <div className="setup">
+        <div className="setup-logo">IMMOMATCH</div>
+        <div className="setup-sub">Connexion Dropbox · Sync Excel bidirectionnelle</div>
+        <div className="info-box">
+          📁 Vos données seront stockées dans <strong>Dropbox/Apps/ImmoMatch/leads.xlsx</strong><br/>
+          Modifiez ce fichier dans Excel à tout moment — ImmoMatch se synchronisera en un clic.
+        </div>
+
+        <div style={{marginBottom:20}}>
+          <div className="step-title"><span className="step-num">1</span>Créer votre app Dropbox</div>
+          <div className="step-desc">
+            → <a href="https://www.dropbox.com/developers/apps" target="_blank">dropbox.com/developers/apps</a> → <strong>Create app</strong><br/>
+            → <strong>Scoped access</strong> → <strong>App folder</strong> → Nom : <strong>ImmoMatch</strong><br/>
+            → Section <em>OAuth 2 → Redirect URIs</em>, ajoutez :<br/>
+            <code>{redirect}</code><br/>
+            → Copiez votre <strong>App key</strong>
+          </div>
+        </div>
+
+        <div style={{marginBottom:20}}>
+          <div className="step-title"><span className="step-num">2</span>Entrez votre App Key</div>
+          <div className="fg" style={{marginBottom:12}}>
+            <label>App Key Dropbox</label>
+            <input value={key} onChange={e=>setKey(e.target.value)} placeholder="ex: abc123xyz456"/>
+          </div>
+          <button className="btn btn-gold" style={{width:'100%'}} onClick={connect}>
+            🔗 Connecter mon Dropbox
+          </button>
+        </div>
+
+        {onBack && (
+          <button className="btn btn-ghost" style={{width:'100%',marginTop:8}} onClick={onBack}>
+            ← Retour à l'application
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── MAIN APP ──────────────────────────────────────────────
+function App() {
+  const [token, setToken]   = useState(null);
+  const [acq, setAcq]       = useState(INIT_ACQ);
+  const [vend, setVend]     = useState(INIT_VEND);
+  const [view, setView]     = useState('dashboard');
+  const [sync, setSync]     = useState('idle');
+  const [lastSync, setLS]   = useState(null);
+  const [pending, setPend]  = useState(false);
+  const [modal, setModal]   = useState(null);
+  const [setup, setSetup]   = useState(false);
+
+  useEffect(()=>{
+    const t = getTokenFromHash() || localStorage.getItem('immo_token');
+    if (t) {
+      setToken(t);
+      localStorage.setItem('immo_token', t);
+      load(t);
+    }
+  },[]);
+
+  const load = async (t=token) => {
+    if (!t) return;
+    setSync('syncing');
+    try {
+      const buf = await dbDownload(t);
+      if (buf) {
+        const {acq:a, vend:v} = parseExcel(buf);
+        if (a.length) setAcq(a);
+        if (v.length) setVend(v);
+      } else {
+        await save(t, acq, vend);
+      }
+      setLS(new Date()); setSync('ok'); setPend(false);
+    } catch(e) { console.error(e); setSync('err'); }
+  };
+
+  const save = async (t=token, a=acq, v=vend) => {
+    if (!t) return;
+    setSync('syncing');
+    try {
+      await dbUpload(t, new Uint8Array(buildExcel(a,v)));
+      setLS(new Date()); setSync('ok'); setPend(false);
+    } catch(e) { console.error(e); setSync('err'); }
+  };
+
+  const update = (newA, newV) => {
+    if (newA) setAcq(newA);
+    if (newV) setVend(newV);
+    setPend(true);
+  };
+
+  const saveLead = (data) => {
+    const isV = modal.isV;
+    const now = today();
+    if (modal.type==='add') {
+      const nl = {...data, id:uid(isV?'VND':'ACQ'), createdAt:now, role:isV?'vendeur':'acquereur'};
+      update(isV?acq:[...acq,nl], isV?[...vend,nl]:vend);
+    } else {
+      update(acq.map(l=>l.id===modal.lead.id?{...l,...data}:l),
+             vend.map(l=>l.id===modal.lead.id?{...l,...data}:l));
+    }
+    setModal(null);
+  };
+
+  const del = (id, isV) => update(
+    isV ? acq : acq.filter(l=>l.id!==id),
+    isV ? vend.filter(l=>l.id!==id) : vend
+  );
+
+  const matches = acq.flatMap(a=>vend.map(v=>({a,v,s:calcScore(a,v)})))
+    .filter(m=>m.s>=40).sort((a,b)=>b.s-a.s);
+
+  const syncDot = {idle:'dot-idle',syncing:'dot-syncing',ok:'dot-ok',err:'dot-err'}[sync];
+  const syncMsg = {
+    idle: token?'Non synchronisé':'Dropbox non connecté',
+    syncing:'Synchronisation…',
+    ok: lastSync?`Sync ${lastSync.toLocaleTimeString('fr-FR')}`:'Synchronisé',
+    err:'Erreur sync'
+  }[sync];
+
+  if (!token || setup) return <Setup onBack={token?()=>setSetup(false):null}/>;
+
+  const NAV = [
+    {id:'dashboard',icon:'◈',label:'Tableau de bord'},
+    {id:'acquereurs',icon:'◎',label:`Acquéreurs (${acq.length})`},
+    {id:'vendeurs',icon:'◉',label:`Vendeurs (${vend.length})`},
+    {id:'rapprochement',icon:'⟡',label:`Rapprochements (${matches.length})`},
+  ];
+
+  return (
+    <div className="app">
+      {/* SIDEBAR */}
+      <aside className="sidebar">
+        <div className="logo">
+          <h1>IMMOMATCH</h1>
+          <span>La Réunion · CRM</span>
+        </div>
+        {NAV.map(n=>(
+          <button key={n.id} className={`nav-btn ${view===n.id?'active':''}`} onClick={()=>setView(n.id)}>
+            <span className="nav-icon">{n.icon}</span>{n.label}
+          </button>
+        ))}
+        <div style={{marginTop:'auto',padding:'0 14px',display:'flex',flexDirection:'column',gap:6}}>
+          <button className="btn btn-ghost btn-sm" onClick={()=>setSetup(true)}>⚙ Dropbox</button>
+        </div>
+      </aside>
+
+      {/* MAIN */}
+      <main className="main">
+        {/* TOP BAR */}
+        <div className="topbar">
+          <div className="sync-bar">
+            <div className={`sync-dot ${syncDot}`}/>
+            <span style={{color:'var(--muted)'}}>{syncMsg}</span>
+            {pending && <span className="pending-tag">● modif. en attente</span>}
+          </div>
+          {pending && <button className="btn btn-gold btn-sm" onClick={()=>save()}>↑ Sauvegarder</button>}
+          <button className="btn btn-ghost btn-sm" onClick={()=>load()}>↓ Charger</button>
+        </div>
+
+        {/* DASHBOARD */}
+        {view==='dashboard' && <>
+          <div className="page-header">
+            <div>
+              <div className="title">Tableau de bord</div>
+              <div className="subtitle">{new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
+            </div>
+          </div>
+          <div className="stats">
+            <div className="stat-card"><div className="stat-val">{acq.length}</div><div className="stat-lbl">Acquéreurs</div></div>
+            <div className="stat-card"><div className="stat-val">{vend.length}</div><div className="stat-lbl">Vendeurs</div></div>
+            <div className="stat-card"><div className="stat-val">{matches.length}</div><div className="stat-lbl">Rapprochements</div></div>
+            <div className="stat-card"><div className="stat-val">{[...acq,...vend].filter(l=>l.statut==='Visite en cours').length}</div><div className="stat-lbl">En visite</div></div>
+          </div>
+          {matches.length>0 && (
+            <div className="section">
+              <div className="section-header">
+                <span className="section-title">🔥 Meilleurs rapprochements</span>
+                <button className="btn btn-ghost btn-sm" onClick={()=>setView('rapprochement')}>Voir tout</button>
+              </div>
+              {matches.slice(0,3).map((m,i)=>(
+                <div key={i} className="match-card">
+                  <div className="person">
+                    <strong>{m.a.prenom} {m.a.nom}</strong>
+                    <span>{m.a.type} · {m.a.zone}</span><br/>
+                    <span>Budget : {fmt(m.a.budgetMax)} max</span>
+                  </div>
+                  <div className="match-score">
+                    <div className={`match-pct ${m.s>=80?'high':m.s>=60?'med':'low'}`}>{m.s}%</div>
+                    <div className="match-lbl">compatibilité</div>
+                  </div>
+                  <div className="person right">
+                    <strong>{m.v.prenom} {m.v.nom}</strong>
+                    <span>{m.v.type} · {m.v.zone}</span><br/>
+                    <span>{fmt(m.v.prix)}{m.v.surface?` · ${m.v.surface} m²`:''}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>}
+
+        {/* ACQUÉREURS */}
+        {view==='acquereurs' && <>
+          <div className="page-header">
+            <div className="title">Acquéreurs</div>
+            <button className="btn btn-gold" onClick={()=>setModal({type:'add',isV:false})}>+ Ajouter</button>
+          </div>
+          <div className="section">
+            <div className="table-wrap">
+              <table>
+                <thead><tr><th>Nom</th><th>Type</th><th>Budget</th><th>Zone</th><th>Classe</th><th>Statut</th><th></th></tr></thead>
+                <tbody>{acq.map(a=>(
+                  <tr key={a.id}>
+                    <td><strong>{a.prenom} {a.nom}</strong><br/><span style={{color:'var(--muted)',fontSize:10}}>{a.tel}</span></td>
+                    <td><BType t={a.type}/></td>
+                    <td style={{whiteSpace:'nowrap'}}>{fmt(a.budgetMin)} – {fmt(a.budgetMax)}</td>
+                    <td>{a.zone}</td>
+                    <td><Bdg c={a.classe}/></td>
+                    <td><BStat s={a.statut}/></td>
+                    <td><div className="td-actions">
+                      <button className="btn btn-ghost btn-sm" onClick={()=>setModal({type:'edit',lead:a,isV:false})}>✎</button>
+                      <button className="btn btn-red btn-sm" onClick={()=>del(a.id,false)}>✕</button>
+                    </div></td>
+                  </tr>
+                ))}</tbody>
+              </table>
+            </div>
+          </div>
+        </>}
+
+        {/* VENDEURS */}
+        {view==='vendeurs' && <>
+          <div className="page-header">
+            <div className="title">Vendeurs</div>
+            <button className="btn btn-gold" onClick={()=>setModal({type:'add',isV:true})}>+ Ajouter</button>
+          </div>
+          <div className="section">
+            <div className="table-wrap">
+              <table>
+                <thead><tr><th>Nom</th><th>Type</th><th>Prix</th><th>Surface</th><th>Zone</th><th>Classe</th><th>Statut</th><th></th></tr></thead>
+                <tbody>{vend.map(v=>(
+                  <tr key={v.id}>
+                    <td><strong>{v.prenom} {v.nom}</strong><br/><span style={{color:'var(--muted)',fontSize:10}}>{v.tel}</span></td>
+                    <td><BType t={v.type}/></td>
+                    <td style={{whiteSpace:'nowrap'}}>{fmt(v.prix)}</td>
+                    <td>{v.surface?v.surface+' m²':'–'}</td>
+                    <td>{v.zone}</td>
+                    <td><Bdg c={v.classe}/></td>
+                    <td><BStat s={v.statut}/></td>
+                    <td><div className="td-actions">
+                      <button className="btn btn-ghost btn-sm" onClick={()=>setModal({type:'edit',lead:v,isV:true})}>✎</button>
+                      <button className="btn btn-red btn-sm" onClick={()=>del(v.id,true)}>✕</button>
+                    </div></td>
+                  </tr>
+                ))}</tbody>
+              </table>
+            </div>
+          </div>
+        </>}
+
+        {/* RAPPROCHEMENT */}
+        {view==='rapprochement' && <>
+          <div className="page-header">
+            <div>
+              <div className="title">Rapprochements</div>
+              <div className="subtitle">{matches.length} correspondance{matches.length>1?'s':''} détectée{matches.length>1?'s':''}</div>
+            </div>
+          </div>
+          {matches.length===0
+            ? <div className="empty">Aucun rapprochement — ajoutez des acquéreurs et vendeurs</div>
+            : <div className="section" style={{paddingBottom:8}}>
+                {matches.map((m,i)=>(
+                  <div key={i} className="match-card">
+                    <div className="person">
+                      <strong>{m.a.prenom} {m.a.nom}</strong>
+                      <span>{m.a.type} · {m.a.zone}</span><br/>
+                      <span>Budget : {fmt(m.a.budgetMin)} – {fmt(m.a.budgetMax)}</span><br/>
+                      <span style={{fontSize:10}}>{m.a.tel}</span>
+                    </div>
+                    <div className="match-score">
+                      <div className={`match-pct ${m.s>=80?'high':m.s>=60?'med':'low'}`}>{m.s}%</div>
+                      <div className="match-lbl">compatibilité</div>
+                    </div>
+                    <div className="person right">
+                      <strong>{m.v.prenom} {m.v.nom}</strong>
+                      <span>{m.v.type} · {m.v.zone}</span><br/>
+                      <span>{fmt(m.v.prix)}{m.v.surface?` · ${m.v.surface} m²`:''}</span><br/>
+                      <span style={{fontSize:10}}>{m.v.tel}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+          }
+        </>}
+      </main>
+
+      {/* MODAL */}
+      {modal && (
+        <Modal
+          title={modal.type==='add'?(modal.isV?'Nouveau vendeur':'Nouvel acquéreur'):'Modifier'}
+          onClose={()=>setModal(null)}
+        >
+          <LeadForm lead={modal.lead} isV={modal.isV} onSave={saveLead} onClose={()=>setModal(null)}/>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
