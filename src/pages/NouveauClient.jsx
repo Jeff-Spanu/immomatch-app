@@ -6,7 +6,7 @@ export default function NouveauClient() {
     nom: "",
     telephone: "",
     email: "",
-    type_client: "acquereur", // Par défaut
+    type_client: "acquereur",
     categorie_client: "standard",
     budget: "",
     secteur: "",
@@ -15,47 +15,74 @@ export default function NouveauClient() {
 
   async function handleSubmit(e) {
     e.preventDefault()
-    
-    const { error } = await supabase
-      .from("clients")
-      .insert([formData])
-
+    const { error } = await supabase.from("clients").insert([formData])
     if (error) {
       alert("Erreur : " + error.message)
     } else {
       alert("Client ajouté avec succès ! ✨")
-      // Reset du formulaire
-      setFormData({
-        nom: "", telephone: "", email: "", 
-        type_client: "acquereur", categorie_client: "standard",
-        budget: "", secteur: "", notes: ""
-      })
+      setFormData({ nom: "", telephone: "", email: "", type_client: "acquereur", categorie_client: "standard", budget: "", secteur: "", notes: "" })
     }
+  }
+
+  const labelStyle = {
+    fontSize: "11px",
+    fontWeight: "600",
+    letterSpacing: "0.18em",
+    textTransform: "uppercase",
+    color: "rgba(255,255,255,0.75)",
+    display: "block",
+    marginBottom: "8px",
+    fontFamily: "'DM Sans', sans-serif",
+  }
+
+  const inputStyle = {
+    width: "100%",
+    background: "rgba(255,255,255,0.05)",
+    border: "1px solid rgba(255,255,255,0.12)",
+    borderRadius: "14px",
+    padding: "14px 20px",
+    outline: "none",
+    color: "#fff",
+    fontSize: "14px",
+    fontFamily: "'DM Sans', sans-serif",
+    transition: "border-color 0.2s",
   }
 
   return (
     <div className="p-10 max-w-4xl mx-auto">
-      <h1 className="text-5xl font-light mb-10 italic">Nouveau Contact</h1>
+
+      {/* En-tête — identique Dashboard */}
+      <div className="mb-10">
+        <p style={{ color: "#C4A882", fontSize: "11px", letterSpacing: "0.25em", textTransform: "uppercase", fontWeight: "600", marginBottom: "10px" }}>
+          Gestion Portefeuille
+        </p>
+        <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "clamp(2rem, 4vw, 3rem)", fontWeight: "300", letterSpacing: "0.02em", lineHeight: 1, color: "#fff" }}>
+          Nouveau Contact
+        </h1>
+      </div>
 
       <form onSubmit={handleSubmit} className="liquid-glass p-10 rounded-[40px] border border-white/10 space-y-8">
-        
-        {/* LIGNE 1 : NOM & TYPE */}
+
+        {/* NOM & TYPE */}
         <div className="grid md:grid-cols-2 gap-8">
           <div>
-            <label className="text-[10px] uppercase tracking-widest text-white/40 mb-2 block">Nom Complet</label>
-            <input 
-              required
-              type="text" 
-              className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 outline-none focus:border-[#C87533] transition-all"
+            <label style={labelStyle}>Nom Complet</label>
+            <input
+              required type="text"
+              style={inputStyle}
               value={formData.nom}
+              onFocus={(e) => e.target.style.borderColor = "#C4A882"}
+              onBlur={(e) => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
               onChange={(e) => setFormData({...formData, nom: e.target.value})}
             />
           </div>
           <div>
-            <label className="text-[10px] uppercase tracking-widest text-white/40 mb-2 block">Type de projet</label>
-            <select 
-              className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 outline-none focus:border-[#C87533] appearance-none"
+            <label style={labelStyle}>Type de projet</label>
+            <select
+              style={inputStyle}
               value={formData.type_client}
+              onFocus={(e) => e.target.style.borderColor = "#C4A882"}
+              onBlur={(e) => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
               onChange={(e) => setFormData({...formData, type_client: e.target.value})}
             >
               <option value="acquereur" className="bg-slate-900">Acquéreur (Recherche)</option>
@@ -64,80 +91,93 @@ export default function NouveauClient() {
           </div>
         </div>
 
-        {/* LIGNE 2 : CONTACT */}
+        {/* CONTACT */}
         <div className="grid md:grid-cols-2 gap-8">
           <div>
-            <label className="text-[10px] uppercase tracking-widest text-white/40 mb-2 block">Téléphone</label>
-            <input 
-              type="tel" 
-              className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 outline-none focus:border-[#C87533]"
+            <label style={labelStyle}>Téléphone</label>
+            <input
+              type="tel"
+              style={inputStyle}
               value={formData.telephone}
+              onFocus={(e) => e.target.style.borderColor = "#C4A882"}
+              onBlur={(e) => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
               onChange={(e) => setFormData({...formData, telephone: e.target.value})}
             />
           </div>
           <div>
-            <label className="text-[10px] uppercase tracking-widest text-white/40 mb-2 block">Email</label>
-            <input 
-              type="email" 
-              className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 outline-none focus:border-[#C87533]"
+            <label style={labelStyle}>Email</label>
+            <input
+              type="email"
+              style={inputStyle}
               value={formData.email}
+              onFocus={(e) => e.target.style.borderColor = "#C4A882"}
+              onBlur={(e) => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
               onChange={(e) => setFormData({...formData, email: e.target.value})}
             />
           </div>
         </div>
 
-        {/* LIGNE 3 : CATEGORIE & BUDGET */}
+        {/* CATÉGORIE, BUDGET, SECTEUR */}
         <div className="grid md:grid-cols-3 gap-8">
           <div>
-            <label className="text-[10px] uppercase tracking-widest text-white/40 mb-2 block">Catégorie</label>
-            <select 
-              className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 outline-none focus:border-[#C87533] appearance-none"
+            <label style={labelStyle}>Catégorie</label>
+            <select
+              style={inputStyle}
               value={formData.categorie_client}
+              onFocus={(e) => e.target.style.borderColor = "#C4A882"}
+              onBlur={(e) => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
               onChange={(e) => setFormData({...formData, categorie_client: e.target.value})}
             >
-              <option value="standard" className="bg-slate-900">Standard</option>
-              <option value="prestige" className="bg-slate-900 text-[#D4AF37]">Prestige</option>
-              <option value="patrimoine" className="bg-slate-900 text-[#4A6FA5]">Patrimoine</option>
+              <option value="standard"   className="bg-slate-900">Standard</option>
+              <option value="prestige"   className="bg-slate-900">Prestige</option>
+              <option value="patrimoine" className="bg-slate-900">Patrimoine</option>
             </select>
           </div>
           <div>
-            <label className="text-[10px] uppercase tracking-widest text-white/40 mb-2 block">Budget / Prix (€)</label>
-            <input 
-              type="number" 
-              className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 outline-none focus:border-[#C87533]"
+            <label style={labelStyle}>Budget / Prix (€)</label>
+            <input
+              type="number"
+              style={inputStyle}
               value={formData.budget}
+              onFocus={(e) => e.target.style.borderColor = "#C4A882"}
+              onBlur={(e) => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
               onChange={(e) => setFormData({...formData, budget: e.target.value})}
             />
           </div>
           <div>
-            <label className="text-[10px] uppercase tracking-widest text-white/40 mb-2 block">Secteur / Ville</label>
-            <input 
-              type="text" 
-              className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 outline-none focus:border-[#C87533]"
+            <label style={labelStyle}>Secteur / Ville</label>
+            <input
+              type="text"
+              style={inputStyle}
               value={formData.secteur}
+              onFocus={(e) => e.target.style.borderColor = "#C4A882"}
+              onBlur={(e) => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
               onChange={(e) => setFormData({...formData, secteur: e.target.value})}
             />
           </div>
         </div>
 
-        {/* LIGNE 4 : NOTES */}
+        {/* NOTES */}
         <div>
-          <label className="text-[10px] uppercase tracking-widest text-white/40 mb-2 block">Notes & Critères</label>
-          <textarea 
+          <label style={labelStyle}>Notes & Critères</label>
+          <textarea
             rows="4"
-            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 outline-none focus:border-[#C87533]"
+            style={{ ...inputStyle, resize: "vertical" }}
             placeholder="Ex: Villa avec piscine, 3 chambres, vue mer..."
             value={formData.notes}
+            onFocus={(e) => e.target.style.borderColor = "#C4A882"}
+            onBlur={(e) => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
             onChange={(e) => setFormData({...formData, notes: e.target.value})}
-          ></textarea>
+          />
         </div>
 
-        <button 
+        <button
           type="submit"
-          className="w-full py-5 rounded-full bg-white text-black font-bold uppercase tracking-[0.2em] text-xs hover:bg-[#C87533] hover:text-white transition-all shadow-xl"
+          className="w-full py-5 rounded-full bg-white text-black font-bold uppercase tracking-[0.2em] text-xs hover:bg-[#C4A882] hover:text-white transition-all"
         >
           Enregistrer le dossier
         </button>
+
       </form>
     </div>
   )

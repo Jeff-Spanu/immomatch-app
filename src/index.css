@@ -1,3 +1,37 @@
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+  body {
+    font-family: "DM Sans", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  input, textarea, select { text-shadow: none; }
+}
+
+@layer components {
+
+  /* Cartes sombres — fond assez opaque pour que le texte ressorte sans effort */
+  .liquid-glass {
+    @apply rounded-xl border border-white/10 transition-all duration-200;
+    background: rgba(8, 6, 4, 0.62);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+  }
+  .liquid-glass:hover {
+    background: rgba(8, 6, 4, 0.70);
+  }
+
+  /* Lien actif sidebar */
+  .accent-glow {
+    background: rgba(196, 168, 130, 0.18) !important;
+    border-left: 2px solid #C4A882 !important;
+    border-radius: 0 12px 12px 0 !important;
+    color: #C4A882 !important;
+  }
+
+}

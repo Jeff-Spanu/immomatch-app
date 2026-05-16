@@ -5,87 +5,100 @@ export default function Patrimoine() {
   const [clients, setClients] = useState([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetchClients()
-  }, [])
+  useEffect(() => { fetchClients() }, [])
 
   async function fetchClients() {
     setLoading(true)
     const { data, error } = await supabase
-      .from("clients")
-      .select("*")
-      .eq("categorie_client", "patrimoine") // Filtre Patrimoine / Investisseurs
+      .from("clients").select("*")
+      .eq("categorie_client", "patrimoine")
       .order("id", { ascending: false })
-
-    if (error) {
-      console.error(error)
-      setClients([])
-    } else {
-      setClients(data || [])
-    }
+    if (error) { console.error(error); setClients([]) }
+    else { setClients(data || []) }
     setLoading(false)
   }
 
   async function updateClient(clientId, updates) {
     const { error } = await supabase.from("clients").update(updates).eq("id", clientId)
-    if (!error) {
-      setClients((prev) => prev.map((c) => (c.id === clientId ? { ...c, ...updates } : c)))
-    }
+    if (!error) setClients((prev) => prev.map((c) => (c.id === clientId ? { ...c, ...updates } : c)))
   }
 
-  const badgeStyle = (active) => `px-3 py-1 rounded-md text-[9px] uppercase tracking-wider font-bold transition-all ${
-    active 
-      ? "bg-[#4A6FA5] text-white" 
-      : "bg-white/5 text-white/20 border border-white/10"
+  const badgeStyle = (active) => `px-3 py-1 rounded-md text-[11px] uppercase tracking-wider font-bold transition-all ${
+    active
+      ? "bg-[#4A6FA5] text-white border border-[#4A6FA5]"
+      : "bg-white/5 text-white/65 border border-white/15"
   }`
 
+  const card = {
+    backgroundColor: "rgba(8, 6, 4, 0.50)",
+    backdropFilter: "blur(24px)",
+    WebkitBackdropFilter: "blur(24px)",
+    border: "1px solid rgba(74, 111, 165, 0.30)",
+    borderRadius: "16px",
+    overflow: "hidden",
+    marginBottom: "16px",
+  }
+
+  const analyseBox = {
+    background: "rgba(0,0,0,0.25)",
+    padding: "16px",
+    borderRadius: "12px",
+    border: "1px solid rgba(74, 111, 165, 0.20)",
+  }
+
   return (
-    <div className="p-10 bg-[#0f1115]">
-      <div className="mb-12 border-l-4 border-[#4A6FA5] pl-6">
-        <p className="text-[#4A6FA5] uppercase tracking-[0.2em] text-[10px] mb-1 font-bold">Gestion d'actifs</p>
-        <h1 className="text-4xl font-bold text-white">Investissement & Patrimoine</h1>
+    <div style={{ fontFamily: "'DM Sans', sans-serif", padding: "40px", color: "#fff" }}>
+
+      <div className="mb-10">
+        <p style={{ color: "#C4A882", fontSize: "11px", letterSpacing: "0.25em", textTransform: "uppercase", fontWeight: "600", marginBottom: "10px" }}>
+          Gestion d'actifs
+        </p>
+        <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "clamp(2rem, 4vw, 3rem)", fontWeight: "300", letterSpacing: "0.02em", lineHeight: 1, color: "#fff" }}>
+          Investissement & Patrimoine
+        </h1>
       </div>
 
-      <div className="grid gap-6">
+      <div className="grid gap-5">
         {clients.map((client) => (
-          <div key={client.id} className="bg-[#161a21] rounded-2xl border border-white/5 overflow-hidden flex flex-col md:flex-row shadow-xl">
-            
-            {/* BLOC INDICATEUR TYPE */}
-            <div className={`w-2 ${client.type_client === 'vendeur' ? 'bg-emerald-500' : 'bg-orange-500'}`}></div>
+          <div key={client.id} style={card} className="flex flex-col md:flex-row">
+
+            <div style={{ width: "4px", background: client.type_client === 'vendeur' ? '#10b981' : '#f97316', flexShrink: 0 }} />
 
             <div className="flex-1 p-8 grid md:grid-cols-3 gap-8 items-center">
-              
-              {/* COLONNE 1 : L'INVESTISSEUR */}
+
               <div>
-                <h2 className="text-xl font-bold text-white mb-1">{client.nom}</h2>
-                <p className="text-white/40 text-xs mb-4">{client.email || "Pas d'email"}</p>
-                <div className="flex gap-2">
-                  <span className="text-[9px] bg-white/5 px-2 py-0.5 rounded text-white/60 border border-white/10 uppercase">
-                    {client.projet_client || "Défiscalisation"}
-                  </span>
-                </div>
+                <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "clamp(1.3rem, 2vw, 1.7rem)", fontWeight: "400", color: "#fff", marginBottom: "4px" }}>
+                  {client.nom}
+                </h2>
+                <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.65)", marginBottom: "12px" }}>
+                  {client.email || "Pas d'email"}
+                </p>
+                <span style={{ fontSize: "10px", background: "rgba(74,111,165,0.15)", padding: "3px 10px", borderRadius: "6px", color: "#7BA7D4", border: "1px solid rgba(74,111,165,0.25)", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: "600" }}>
+                  {client.projet_client || "Défiscalisation"}
+                </span>
               </div>
 
-              {/* COLONNE 2 : ANALYSE FINANCIÈRE */}
-              <div className="bg-black/20 p-4 rounded-xl border border-white/5">
-                <div className="flex justify-between items-end mb-1">
-                  <span className="text-[10px] text-white/30 uppercase">Enveloppe</span>
-                  <span className="text-[#4A6FA5] font-bold">{client.budget?.toLocaleString()} €</span>
+              <div style={analyseBox}>
+                <div className="flex justify-between items-end mb-2">
+                  <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.70)", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: "600" }}>Enveloppe</span>
+                  <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "1.3rem", fontWeight: "400", color: "#7BA7D4" }}>{client.budget?.toLocaleString()} €</span>
                 </div>
-                <div className="w-full bg-white/5 h-1 rounded-full overflow-hidden">
-                  <div className="bg-[#4A6FA5] h-full w-[70%]"></div>
+                <div style={{ width: "100%", background: "rgba(255,255,255,0.08)", height: "3px", borderRadius: "4px", overflow: "hidden" }}>
+                  <div style={{ background: "#4A6FA5", height: "100%", width: "70%" }} />
                 </div>
-                <p className="text-[10px] text-white/40 mt-2 italic">Rentabilité cible : {client.type_bien === 'Immeuble' ? '6.5%' : '4.2%'}</p>
+                <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.70)", marginTop: "8px", fontStyle: "italic" }}>
+                  Rentabilité cible : {client.type_bien === 'Immeuble' ? '6.5%' : '4.2%'}
+                </p>
               </div>
 
-              {/* COLONNE 3 : CARACTÉRISTIQUES ACTIF */}
               <div className="flex flex-col gap-4">
                 <div className="flex flex-wrap gap-2">
                   <button onClick={() => updateClient(client.id, { garage: !client.garage })} className={badgeStyle(client.garage)}>Box/Parking</button>
                   <button onClick={() => updateClient(client.id, { plain_pied: !client.plain_pied })} className={badgeStyle(client.plain_pied)}>Rapport</button>
-                  <button onClick={() => updateClient(client.id, { secteur: !client.secteur })} className={badgeStyle(true)}>Zone {client.secteur || 'Tours'}</button>
+                  <button className={badgeStyle(true)}>Zone {client.secteur || 'À définir'}</button>
                 </div>
-                <button className="text-[10px] font-bold text-white/40 hover:text-white uppercase tracking-widest text-left transition">
+                <button style={{ fontSize: "11px", color: "rgba(255,255,255,0.70)", letterSpacing: "0.12em", textTransform: "uppercase", background: "none", border: "none", cursor: "pointer", textAlign: "left", fontWeight: "600" }}
+                  className="hover:text-white transition-colors">
                   → Historique des échanges
                 </button>
               </div>
@@ -94,9 +107,11 @@ export default function Patrimoine() {
           </div>
         ))}
 
-        {clients.length === 0 && (
-          <div className="text-center py-20 bg-white/5 rounded-2xl border border-dashed border-white/10">
-            <p className="text-white/30 italic">Aucun dossier patrimoine identifié.</p>
+        {clients.length === 0 && !loading && (
+          <div style={{ textAlign: "center", padding: "60px 40px", border: "1px solid rgba(74,111,165,0.40)", borderRadius: "16px", backgroundColor: "rgba(5,4,2,0.80)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)" }}>
+            <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "15px", fontWeight: "500", fontStyle: "italic", color: "#ffffff" }}>
+              Aucun dossier patrimoine identifié.
+            </p>
           </div>
         )}
       </div>

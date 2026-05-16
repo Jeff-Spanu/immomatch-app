@@ -14,42 +14,47 @@ import ImportCSV from "./pages/ImportCSV"
 import DashboardClients from "./pages/DashboardClients"
 
 export default function App() {
-
   return (
-    <div className="min-h-screen text-white flex relative overflow-hidden bg-black">
+    <div
+      className="min-h-screen text-white flex relative overflow-x-hidden bg-charcoal"
+      style={{ fontFamily: "'DM Sans', sans-serif" }}
+    >
 
-      {/* Background premium */}
-      <div className="absolute inset-0">
+      {/* ─── FOND DESKTOP : fixed = identique sur TOUTES les pages ─── */}
+      <div className="fixed inset-0 z-0 pointer-events-none hidden lg:block">
         <img
-          src="https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?q=80&w=2070&auto=format&fit=crop"
-          alt="background"
-          className="w-full h-full object-cover opacity-20"
+          src="/immomatch-bg.png"
+          alt=""
+          className="w-full h-full object-cover"
+          style={{ filter: "brightness(0.82) contrast(1.02)" }}
         />
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-[3px]" />
-        <div className="absolute top-[-200px] left-[-200px] w-[700px] h-[700px] bg-[#C87533]/20 blur-3xl rounded-full" />
-        <div className="absolute bottom-[-200px] right-[-200px] w-[700px] h-[700px] bg-orange-500/10 blur-3xl rounded-full" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/15 to-black/5" />
+        <div className="absolute top-[-150px] left-[-150px] w-[500px] h-[500px] bg-wood/10 blur-3xl rounded-full" />
       </div>
 
-      {/* App */}
-      <div className="relative z-10 flex w-full">
+      {/* ─── FOND MOBILE / TABLETTE ─── */}
+      <div className="fixed inset-0 z-0 bg-[#1C1917] lg:hidden" />
+
+      {/* ─── INTERFACE ─── */}
+      <div className="relative z-10 flex flex-col md:flex-row w-full min-h-screen">
         <Sidebar />
-        <main className="flex-1 p-6 lg:p-10 overflow-auto">
+
+        <main className="flex-1 p-4 md:p-10 overflow-y-auto overflow-x-hidden w-full">
           <Routes>
-
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/nouveau-client" element={<NouveauClient />} />
-            <Route path="/clients" element={<Clients />} />
-            <Route path="/acquereurs" element={<Acquereurs />} />
-            <Route path="/vendeurs" element={<Vendeurs />} />
-            <Route path="/matching" element={<Matching />} />
-            <Route path="/prestige" element={<Prestige />} />
-            <Route path="/patrimoine" element={<Patrimoine />} />
-            <Route path="/import-csv" element={<ImportCSV />} />
-            <Route path="/dashboard-clients" element={<DashboardClients />} />
-
+            <Route path="/"                   element={<Dashboard />} />
+            <Route path="/nouveau-client"     element={<NouveauClient />} />
+            <Route path="/clients"            element={<Clients />} />
+            <Route path="/acquereurs"         element={<Acquereurs />} />
+            <Route path="/vendeurs"           element={<Vendeurs />} />
+            <Route path="/matching"           element={<Matching />} />
+            <Route path="/prestige"           element={<Prestige />} />
+            <Route path="/patrimoine"         element={<Patrimoine />} />
+            <Route path="/import-csv"         element={<ImportCSV />} />
+            <Route path="/dashboard-clients"  element={<DashboardClients />} />
           </Routes>
         </main>
       </div>
+
     </div>
   )
 }

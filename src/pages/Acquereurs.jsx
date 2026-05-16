@@ -5,160 +5,205 @@ export default function Acquereurs() {
   const [clients, setClients] = useState([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetchClients()
-  }, [])
+  useEffect(() => { fetchClients() }, [])
 
   async function fetchClients() {
     setLoading(true)
     const { data, error } = await supabase
-      .from("clients")
-      .select("*")
+      .from("clients").select("*")
       .eq("type_client", "acquereur")
       .order("id", { ascending: false })
-
-    if (error) {
-      console.error("Erreur chargement :", error)
-      setClients([])
-    } else {
-      setClients(data || [])
-    }
+    if (error) { console.error("Erreur chargement :", error); setClients([]) }
+    else { setClients(data || []) }
     setLoading(false)
   }
 
-  // --- LOGIQUE D'AFFINAGE IA (SCAN DES NOTES) ---
   async function affinerDepuisNotes(client) {
     const n = client.notes?.toLowerCase() || ""
-    
-    // Détection automatique dans le texte
     const updates = {
-      piscine: n.includes("piscine") || n.includes("pool") || n.includes("bassin"),
-      vue_mer: n.includes("mer") || n.includes("océan") || n.includes("vue mer"),
-      garage: n.includes("garage") || n.includes("box") || n.includes("parking"),
+      piscine:  n.includes("piscine") || n.includes("pool") || n.includes("bassin"),
+      vue_mer:  n.includes("mer") || n.includes("océan") || n.includes("vue mer"),
+      garage:   n.includes("garage") || n.includes("box") || n.includes("parking"),
       varangue: n.includes("varangue") || n.includes("terrasse") || n.includes("balcon"),
-      jardin: n.includes("jardin") || n.includes("cour") || n.includes("terrain"),
-      // Si la note contient "500k", on transforme en 500000
-      budget: n.match(/\d+k/i) ? parseInt(n.match(/\d+k/i)[0]) * 1000 : client.budget
+      jardin:   n.includes("jardin") || n.includes("cour") || n.includes("terrain"),
+      budget:   n.match(/\d+k/i) ? parseInt(n.match(/\d+k/i)[0]) * 1000 : client.budget
     }
-
     await updateClient(client.id, updates)
     alert("Analyse de la note terminée ! Les critères ont été mis à jour. ✨")
   }
 
-  // --- SAUVEGARDE DANS SUPABASE ---
   async function updateClient(clientId, updates) {
-    const { error } = await supabase
-      .from("clients")
-      .update(updates)
-      .eq("id", clientId)
-
-    if (error) {
-      console.error("Erreur update :", error)
-      return
-    }
-
-    // Mise à jour de l'affichage sans recharger la page
-    setClients((prev) =>
-      prev.map((c) => (c.id === clientId ? { ...c, ...updates } : c))
-    )
+    const { error } = await supabase.from("clients").update(updates).eq("id", clientId)
+    if (error) { console.error("Erreur update :", error); return }
+    setClients((prev) => prev.map((c) => (c.id === clientId ? { ...c, ...updates } : c)))
   }
 
-  const badgeStyle = (active) => `px-4 py-1.5 rounded-full text-[10px] uppercase font-bold transition-all duration-500 ${
-    active 
-      ? "bg-[#C87533] text-white border border-[#C87533] shadow-[0_0_15px_rgba(200,117,51,0.3)]" 
-      : "bg-white/5 text-white/20 border border-white/10"
-  }`
+  const card = {
+    backgroundColor: "rgba(8, 6, 4, 0.50)",
+    backdropFilter: "blur(24px)",
+    WebkitBackdropFilter: "blur(24px)",
+    border: "1px solid rgba(255,255,255,0.10)",
+    borderRadius: "24px",
+    padding: "28px 32px",
+    marginBottom: "20px",
+  }
+
+  const budgetBox = {
+    background: "rgba(0,0,0,0.30)",
+    border: "1px solid rgba(255,255,255,0.10)",
+    borderRadius: "12px",
+    padding: "18px 22px",
+    minWidth: "220px",
+  }
+
+  const notesBox = {
+    background: "rgba(0,0,0,0.25)",
+    border: "1px solid rgba(255,255,255,0.08)",
+    borderRadius: "10px",
+    padding: "14px 16px",
+    minHeight: "80px",
+  }
+
+  const badgeStyle = (active) => ({
+    padding: "5px 14px",
+    borderRadius: "20px",
+    fontSize: "11px",
+    fontWeight: "600",
+    letterSpacing: "0.1em",
+    textTransform: "uppercase",
+    cursor: "pointer",
+    border: active ? "1px solid #C4A882" : "1px solid rgba(255,255,255,0.15)",
+    background: active ? "rgba(196,168,130,0.2)" : "rgba(255,255,255,0.05)",
+    color: active ? "#C4A882" : "rgba(255,255,255,0.65)",
+    transition: "all 0.2s",
+  })
+
+  const inputStyle = {
+    background: "rgba(0,0,0,0.25)",
+    border: "1px solid rgba(255,255,255,0.10)",
+    borderRadius: "8px",
+    padding: "8px 12px",
+    fontSize: "13px",
+    color: "#fff",
+    outline: "none",
+    width: "100%",
+  }
+
+  const sectionLabel = {
+    fontSize: "11px",
+    color: "rgba(255,255,255,0.70)",
+    letterSpacing: "0.16em",
+    textTransform: "uppercase",
+    fontWeight: "600",
+  }
 
   return (
-    <div className="p-10">
-      <div className="mb-10">
-        <p className="text-[#C87533] uppercase tracking-[0.3em] text-xs mb-3">Gestion Portefeuille</p>
-        <h1 className="text-5xl font-light italic">Acquéreurs</h1>
+    <div style={{ fontFamily: "'DM Sans', sans-serif", padding: "28px", color: "#fff" }}>
+
+      {/* En-tête — charte Dashboard */}
+      <div className="mb-8">
+        <p style={{ color: "#C4A882", fontSize: "11px", letterSpacing: "0.25em", textTransform: "uppercase", fontWeight: "600", marginBottom: "10px" }}>
+          Gestion Portefeuille
+        </p>
+        <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "clamp(2rem, 4vw, 3rem)", fontWeight: "300", letterSpacing: "0.02em", lineHeight: 1 }}>
+          Acquéreurs
+        </h1>
       </div>
 
-      <div className="grid gap-8">
+      <div>
         {clients.map((client) => (
-          <div key={client.id} className="liquid-glass p-10 rounded-[50px] border border-white/10 relative group transition-all hover:border-[#C87533]/30">
-            
-            <div className="flex flex-col lg:flex-row justify-between gap-8">
-              {/* INFOS CLIENT */}
+          <div key={client.id} style={card}>
+
+            <div className="flex flex-col lg:flex-row justify-between gap-6">
+
+              {/* Infos client */}
               <div className="flex-1">
-                <div className="flex items-center gap-4 mb-4">
-                  <h2 className="text-4xl font-serif text-white">{client.nom}</h2>
-                  <span className="bg-white/5 px-3 py-1 rounded-full text-[10px] text-white/40 uppercase tracking-widest border border-white/10">
+                <div className="flex flex-wrap items-center gap-3 mb-3">
+                  <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "clamp(1.4rem, 2.5vw, 1.9rem)", fontWeight: "400", letterSpacing: "0.01em" }}>
+                    {client.nom}
+                  </h2>
+                  <span style={{ fontSize: "10px", padding: "3px 10px", borderRadius: "20px", border: "1px solid rgba(255,255,255,0.18)", color: "rgba(255,255,255,0.75)", letterSpacing: "0.15em", textTransform: "uppercase" }}>
                     {client.categorie_client}
                   </span>
                 </div>
-                <div className="flex flex-wrap gap-6 text-white/50 text-sm">
-                  <span className="flex items-center gap-2"> <span className="opacity-30">TEL</span> {client.telephone || "Non renseigné"}</span>
-                  <span className="flex items-center gap-2"> <span className="opacity-30">MAIL</span> {client.email || "Non renseigné"}</span>
+                <div className="flex flex-wrap gap-x-6 gap-y-1" style={{ fontSize: "13px", color: "rgba(255,255,255,0.80)" }}>
+                  <span>
+                    <span style={{ color: "rgba(255,255,255,0.70)", fontSize: "10px", fontWeight: "700", letterSpacing: "0.12em", marginRight: "6px" }}>TÉL</span>
+                    {client.telephone || "Non renseigné"}
+                  </span>
+                  <span>
+                    <span style={{ color: "rgba(255,255,255,0.70)", fontSize: "10px", fontWeight: "700", letterSpacing: "0.12em", marginRight: "6px" }}>MAIL</span>
+                    {client.email || "Non renseigné"}
+                  </span>
                 </div>
               </div>
 
-              {/* BUDGET & SECTEUR */}
-              <div className="lg:text-right bg-white/[0.02] p-6 rounded-[30px] border border-white/5 min-w-[250px]">
-                <p className="text-[#C87533] text-3xl font-light">{client.budget?.toLocaleString()} €</p>
-                <p className="text-white/40 text-[10px] uppercase tracking-[0.2em] mt-1">{client.secteur || "Secteur à définir"}</p>
-                <div className="mt-4 pt-4 border-t border-white/5 text-xs text-white/60">
-                   {client.type_bien || "Type de bien non spécifié"}
+              {/* Budget & secteur */}
+              <div style={budgetBox} className="lg:text-right">
+                <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "1.8rem", fontWeight: "400", color: "#C4A882", lineHeight: 1 }}>
+                  {client.budget?.toLocaleString()} €
+                </p>
+                <p style={{ fontSize: "10px", color: "rgba(255,255,255,0.70)", letterSpacing: "0.18em", textTransform: "uppercase", marginTop: "6px" }}>
+                  {client.secteur || "Secteur à définir"}
+                </p>
+                <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", marginTop: "10px", paddingTop: "10px", fontSize: "12px", color: "rgba(255,255,255,0.70)", fontWeight: "400" }}>
+                  {client.type_bien || "Type de bien non spécifié"}
                 </div>
               </div>
             </div>
 
-            {/* ANALYSE DES NOTES (KEEP) */}
-            <div className="mt-10 grid xl:grid-cols-2 gap-10">
-               <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-[10px] text-white/30 uppercase tracking-widest font-bold">Notes Google Keep</h3>
-                    <button 
-                      onClick={() => affinerDepuisNotes(client)}
-                      className="text-[#C87533] text-[10px] font-bold uppercase hover:underline flex items-center gap-2"
-                    >
-                      🪄 Scanner la note
-                    </button>
-                  </div>
-                  <div className="p-6 bg-black/40 rounded-[30px] border border-white/5 min-h-[100px]">
-                    <p className="text-sm italic text-white/70 leading-relaxed">
-                      {client.notes ? `"${client.notes}"` : "Aucune note importée pour ce contact."}
-                    </p>
-                  </div>
-               </div>
+            {/* Notes + Critères */}
+            <div className="mt-6 grid grid-cols-1 xl:grid-cols-2 gap-6">
 
-               {/* BADGES INTERACTIFS */}
-               <div className="space-y-4">
-                  <h3 className="text-[10px] text-white/30 uppercase tracking-widest font-bold">Critères Qualifiés</h3>
-                  <div className="flex flex-wrap gap-3">
-                    <button onClick={() => updateClient(client.id, { piscine: !client.piscine })} className={badgeStyle(client.piscine)}>Piscine</button>
-                    <button onClick={() => updateClient(client.id, { vue_mer: !client.vue_mer })} className={badgeStyle(client.vue_mer)}>Vue Mer</button>
-                    <button onClick={() => updateClient(client.id, { garage: !client.garage })} className={badgeStyle(client.garage)}>Garage</button>
-                    <button onClick={() => updateClient(client.id, { jardin: !client.jardin })} className={badgeStyle(client.jardin)}>Jardin</button>
-                    <button onClick={() => updateClient(client.id, { varangue: !client.varangue })} className={badgeStyle(client.varangue)}>Varangue</button>
-                  </div>
-                  
-                  {/* MODIF RAPIDE SECTEUR/BUDGET */}
-                  <div className="grid grid-cols-2 gap-4 mt-4">
-                     <input 
-                       type="text" 
-                       placeholder="Changer secteur..."
-                       className="bg-white/5 border border-white/10 rounded-2xl px-4 py-2 text-xs outline-none focus:border-[#C87533]"
-                       onBlur={(e) => updateClient(client.id, { secteur: e.target.value })}
-                     />
-                     <input 
-                       type="number" 
-                       placeholder="Changer budget..."
-                       className="bg-white/5 border border-white/10 rounded-2xl px-4 py-2 text-xs outline-none focus:border-[#C87533]"
-                       onBlur={(e) => updateClient(client.id, { budget: e.target.value })}
-                     />
-                  </div>
-               </div>
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <h3 style={sectionLabel}>Notes Google Keep</h3>
+                  <button
+                    onClick={() => affinerDepuisNotes(client)}
+                    style={{ fontSize: "11px", color: "#C4A882", fontWeight: "600", letterSpacing: "0.1em", textTransform: "uppercase", background: "none", border: "none", cursor: "pointer" }}
+                  >
+                    ✦ Scanner la note
+                  </button>
+                </div>
+                <div style={notesBox}>
+                  <p style={{ fontSize: "13px", fontStyle: "italic", color: "rgba(255,255,255,0.80)", lineHeight: 1.6, fontWeight: "300" }}>
+                    {client.notes || "Aucune note importée pour ce contact."}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <h3 style={{ ...sectionLabel, marginBottom: "10px" }}>Critères Qualifiés</h3>
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={() => updateClient(client.id, { piscine: !client.piscine })} style={badgeStyle(client.piscine)}>Piscine</button>
+                  <button onClick={() => updateClient(client.id, { vue_mer: !client.vue_mer })} style={badgeStyle(client.vue_mer)}>Vue Mer</button>
+                  <button onClick={() => updateClient(client.id, { garage: !client.garage })} style={badgeStyle(client.garage)}>Garage</button>
+                  <button onClick={() => updateClient(client.id, { jardin: !client.jardin })} style={badgeStyle(client.jardin)}>Jardin</button>
+                  <button onClick={() => updateClient(client.id, { varangue: !client.varangue })} style={badgeStyle(client.varangue)}>Varangue</button>
+                </div>
+                <div className="grid grid-cols-2 gap-3 mt-4">
+                  <input type="text" placeholder="Modifier secteur..." style={inputStyle}
+                    onFocus={(e) => e.target.style.borderColor = "#C4A882"}
+                    onBlur={(e) => { e.target.style.borderColor = "rgba(255,255,255,0.10)"; if (e.target.value) updateClient(client.id, { secteur: e.target.value }) }}
+                  />
+                  <input type="number" placeholder="Modifier budget..." style={inputStyle}
+                    onFocus={(e) => e.target.style.borderColor = "#C4A882"}
+                    onBlur={(e) => { e.target.style.borderColor = "rgba(255,255,255,0.10)"; if (e.target.value) updateClient(client.id, { budget: Number(e.target.value) }) }}
+                  />
+                </div>
+              </div>
             </div>
+
           </div>
         ))}
 
         {clients.length === 0 && !loading && (
-          <div className="text-center py-20 opacity-20 italic">Aucun acquéreur trouvé dans la base.</div>
+          <div style={{ textAlign: "center", padding: "80px 0", color: "rgba(255,255,255,0.55)", fontStyle: "italic", fontSize: "14px" }}>
+            Aucun acquéreur trouvé dans la base.
+          </div>
         )}
       </div>
+
     </div>
   )
 }

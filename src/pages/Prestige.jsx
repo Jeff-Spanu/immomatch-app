@@ -5,94 +5,133 @@ export default function Prestige() {
   const [clients, setClients] = useState([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetchClients()
-  }, [])
+  useEffect(() => { fetchClients() }, [])
 
   async function fetchClients() {
     setLoading(true)
     const { data, error } = await supabase
-      .from("clients")
-      .select("*")
-      .eq("categorie_client", "prestige") // Filtre exclusif Prestige
-      .order("budget", { ascending: false }) // Les plus gros budgets en premier
-
-    if (error) {
-      console.error(error)
-      setClients([])
-    } else {
-      setClients(data || [])
-    }
+      .from("clients").select("*")
+      .eq("categorie_client", "prestige")
+      .order("budget", { ascending: false })
+    if (error) { console.error(error); setClients([]) }
+    else { setClients(data || []) }
     setLoading(false)
   }
 
   async function updateClient(clientId, updates) {
     const { error } = await supabase.from("clients").update(updates).eq("id", clientId)
-    if (!error) {
-      setClients((prev) => prev.map((c) => (c.id === clientId ? { ...c, ...updates } : c)))
-    }
+    if (!error) setClients((prev) => prev.map((c) => (c.id === clientId ? { ...c, ...updates } : c)))
   }
 
-  const badgeStyle = (active) => `px-4 py-1.5 rounded-full text-[9px] uppercase tracking-widest font-bold transition-all duration-700 ${
-    active 
-      ? "bg-[#D4AF37] text-black shadow-[0_0_20px_rgba(212,175,55,0.4)]" 
-      : "bg-white/5 text-white/20 border border-white/10"
-  }`
+  const card = {
+    backgroundColor: "rgba(8, 6, 4, 0.50)",
+    backdropFilter: "blur(24px)",
+    WebkitBackdropFilter: "blur(24px)",
+    border: "1px solid rgba(196,168,130,0.20)",
+    borderRadius: "16px",
+    padding: "32px 36px",
+    marginBottom: "20px",
+  }
+
+  const prixBox = {
+    background: "rgba(0,0,0,0.30)",
+    border: "1px solid rgba(196,168,130,0.15)",
+    borderRadius: "12px",
+    padding: "18px 22px",
+    minWidth: "220px",
+  }
+
+  const badgeStyle = (active) => ({
+    padding: "5px 14px",
+    borderRadius: "20px",
+    fontSize: "11px",
+    fontWeight: "600",
+    letterSpacing: "0.1em",
+    textTransform: "uppercase",
+    cursor: "pointer",
+    border: active ? "1px solid #C4A882" : "1px solid rgba(255,255,255,0.15)",
+    background: active ? "rgba(196,168,130,0.2)" : "rgba(255,255,255,0.05)",
+    color: active ? "#C4A882" : "rgba(255,255,255,0.65)",
+    transition: "all 0.2s",
+  })
 
   return (
-    <div className="p-10 bg-[#050505] min-h-screen">
-      <div className="mb-16 text-center">
-        <p className="text-[#D4AF37] uppercase tracking-[0.5em] text-[10px] mb-4 font-bold">Sélection Exclusive</p>
-        <h1 className="text-6xl font-serif text-white tracking-tighter">Portefeuille Prestige</h1>
-        <div className="w-24 h-px bg-[#D4AF37] mx-auto mt-6 opacity-50"></div>
+    <div style={{ fontFamily: "'DM Sans', sans-serif", padding: "28px", color: "#fff" }}>
+
+      {/* En-tête — charte Dashboard */}
+      <div className="mb-10">
+        <p style={{ color: "#C4A882", fontSize: "11px", letterSpacing: "0.25em", textTransform: "uppercase", fontWeight: "600", marginBottom: "10px" }}>
+          Sélection Exclusive
+        </p>
+        <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "clamp(2rem, 4vw, 3rem)", fontWeight: "300", letterSpacing: "0.02em", lineHeight: 1 }}>
+          Portefeuille Prestige
+        </h1>
+        <div style={{ width: "40px", height: "1px", background: "#C4A882", marginTop: "16px", opacity: 0.6 }} />
       </div>
 
-      <div className="max-w-6xl mx-auto grid gap-10">
+      <div>
         {clients.map((client) => (
-          <div key={client.id} className="relative group p-1 border border-[#D4AF37]/20 rounded-[60px] overflow-hidden transition-all hover:border-[#D4AF37]/50">
-            <div className="bg-[#0a0a0a] p-10 rounded-[58px] flex flex-col lg:flex-row justify-between gap-10">
-              
-              {/* CÔTÉ GAUCHE : IDENTITÉ */}
+          <div key={client.id} style={card}>
+
+            <div className="flex flex-col lg:flex-row justify-between gap-8">
+
+              {/* Identité */}
               <div className="flex-1">
-                <div className="flex items-center gap-4 mb-6">
-                  <span className="w-3 h-3 rounded-full bg-[#D4AF37] animate-pulse"></span>
-                  <h2 className="text-4xl font-serif text-white leading-none">{client.nom}</h2>
+                <div className="flex items-center gap-3 mb-4">
+                  <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#C4A882", display: "inline-block", flexShrink: 0 }} />
+                  <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "clamp(1.6rem, 3vw, 2.2rem)", fontWeight: "400", letterSpacing: "0.02em" }}>
+                    {client.nom}
+                  </h2>
                 </div>
-                <div className="space-y-2">
-                  <p className="text-white/40 text-xs uppercase tracking-widest font-medium">Contact Privé</p>
-                  <p className="text-white/80 font-light">{client.telephone || "Ligne non renseignée"}</p>
-                  <p className="text-white/80 font-light truncate">{client.email || "Email confidentiel"}</p>
-                </div>
-              </div>
-
-              {/* CÔTÉ DROIT : CHIFFRES & LIEU */}
-              <div className="lg:text-right border-l lg:border-l-0 lg:border-r border-white/10 lg:pr-10 lg:pl-0 pl-10 flex flex-col justify-center">
-                <p className="text-[#D4AF37] text-5xl font-serif mb-2">{client.budget?.toLocaleString()} €</p>
-                <p className="text-white/30 text-xs uppercase tracking-[0.3em] font-bold">{client.secteur || "Localisation Premium"}</p>
-                <div className="mt-4 inline-block px-4 py-1 rounded-full border border-[#D4AF37]/30 text-[#D4AF37] text-[9px] uppercase font-bold self-start lg:self-end">
-                   {client.type_client}
+                <p style={{ fontSize: "10px", color: "rgba(255,255,255,0.70)", letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: "600", marginBottom: "10px" }}>
+                  Contact Privé
+                </p>
+                <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.80)", fontWeight: "300", lineHeight: 1.8 }}>
+                  <div>{client.telephone || "Ligne non renseignée"}</div>
+                  <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.65)" }}>{client.email || "Email confidentiel"}</div>
                 </div>
               </div>
 
-              {/* PRESTATIONS HAUT DE GAMME */}
-              <div className="flex flex-col justify-between min-w-[200px] gap-6">
+              {/* Budget & localisation */}
+              <div style={prixBox} className="lg:text-right flex flex-col justify-center">
+                <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "2.2rem", fontWeight: "400", color: "#C4A882", lineHeight: 1 }}>
+                  {client.budget?.toLocaleString()} €
+                </p>
+                <p style={{ fontSize: "10px", color: "rgba(255,255,255,0.70)", letterSpacing: "0.2em", textTransform: "uppercase", marginTop: "8px", fontWeight: "600" }}>
+                  {client.secteur || "Localisation Premium"}
+                </p>
+                <div style={{ marginTop: "10px" }}>
+                  <span style={{ fontSize: "10px", padding: "3px 12px", borderRadius: "20px", border: "1px solid rgba(196,168,130,0.30)", color: "#C4A882", letterSpacing: "0.12em", textTransform: "uppercase", fontWeight: "600" }}>
+                    {client.type_client}
+                  </span>
+                </div>
+              </div>
+
+              {/* Prestations */}
+              <div style={{ minWidth: "200px" }} className="flex flex-col justify-between gap-4">
                 <div className="flex flex-wrap lg:justify-end gap-2">
-                   <button onClick={() => updateClient(client.id, { vue_mer: !client.vue_mer })} className={badgeStyle(client.vue_mer)}>Vue Mer</button>
-                   <button onClick={() => updateClient(client.id, { piscine: !client.piscine })} className={badgeStyle(client.piscine)}>Piscine</button>
-                   <button onClick={() => updateClient(client.id, { varangue: !client.varangue })} className={badgeStyle(client.varangue)}>Varangue</button>
+                  <button onClick={() => updateClient(client.id, { vue_mer: !client.vue_mer })} style={badgeStyle(client.vue_mer)}>Vue Mer</button>
+                  <button onClick={() => updateClient(client.id, { piscine: !client.piscine })} style={badgeStyle(client.piscine)}>Piscine</button>
+                  <button onClick={() => updateClient(client.id, { varangue: !client.varangue })} style={badgeStyle(client.varangue)}>Varangue</button>
                 </div>
-                <button className="w-full py-4 rounded-full bg-white text-black text-[10px] font-bold uppercase tracking-widest hover:bg-[#D4AF37] transition-colors">
+                <button
+                  style={{ width: "100%", padding: "12px", borderRadius: "8px", background: "transparent", border: "1px solid rgba(196,168,130,0.45)", color: "#C4A882", fontSize: "11px", fontWeight: "600", letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", transition: "all 0.2s", fontFamily: "'DM Sans', sans-serif" }}
+                  onMouseOver={(e) => { e.target.style.background = "rgba(196,168,130,0.12)" }}
+                  onMouseOut={(e) => { e.target.style.background = "transparent" }}
+                >
                   Ouvrir le dossier
                 </button>
               </div>
-
             </div>
+
           </div>
         ))}
 
-        {clients.length === 0 && (
-          <div className="text-center py-32 border border-dashed border-white/10 rounded-[60px]">
-            <p className="text-white/20 font-serif italic text-2xl font-light">Aucun dossier Prestige pour le moment.</p>
+        {clients.length === 0 && !loading && (
+          <div style={{ textAlign: "center", padding: "60px 40px", border: "1px solid rgba(196,168,130,0.40)", borderRadius: "16px", backgroundColor: "rgba(5,4,2,0.80)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)" }}>
+            <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "15px", fontWeight: "500", fontStyle: "italic", color: "#ffffff" }}>
+              Aucun dossier Prestige pour le moment.
+            </p>
           </div>
         )}
       </div>
