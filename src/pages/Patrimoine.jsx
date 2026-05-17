@@ -1,9 +1,36 @@
 import { useEffect, useState } from "react"
 import { supabase } from "../supabase"
 
+const inputStyle = {
+  width: "100%",
+  background: "rgba(255,255,255,0.05)",
+  border: "1px solid rgba(255,255,255,0.12)",
+  borderRadius: "14px",
+  padding: "14px 20px",
+  outline: "none",
+  color: "#fff",
+  fontSize: "14px",
+  fontFamily: "'DM Sans', sans-serif",
+  transition: "border-color 0.2s",
+}
+
+const labelStyle = {
+  fontSize: "11px",
+  fontWeight: "600",
+  letterSpacing: "0.18em",
+  textTransform: "uppercase",
+  color: "rgba(255,255,255,0.75)",
+  display: "block",
+  marginBottom: "8px",
+  fontFamily: "'DM Sans', sans-serif",
+}
+
 export default function Patrimoine() {
-  const [clients, setClients] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [clients, setClients]       = useState([])
+  const [loading, setLoading]       = useState(true)
+  const [editClient, setEditClient] = useState(null)
+  const [saving, setSaving]         = useState(false)
+  const [newNote, setNewNote]       = useState("")
 
   useEffect(() => { fetchClients() }, [])
 
@@ -20,7 +47,40 @@ export default function Patrimoine() {
 
   async function updateClient(clientId, updates) {
     const { error } = await supabase.from("clients").update(updates).eq("id", clientId)
-    if (!error) setClients((prev) => prev.map((c) => (c.id === clientId ? { ...c, ...updates } : c)))
+    if (!error) setClients(prev => prev.map(c => c.id === clientId ? { ...c, ...updates } : c))
+  }
+
+  function openEdit(client) {
+    setEditClient({ ...client })
+    setNewNote("")
+  }
+  function closeEdit() { setEditClient(null) }
+
+  // Ajouter une note horodatée à l'historique
+  function ajouterNote() {
+    if (!newNote.trim()) return
+    const date = new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })
+    const entree = `[${date}] ${newNote.trim()}`
+    const notesExistantes = editClient.notes ? editClient.notes + "\n" + entree : entree
+    setEditClient({ ...editClient, notes: notesExistantes })
+    setNewNote("")
+  }
+
+  async function handleSave(e) {
+    e.preventDefault()
+    setSaving(true)
+    const { id, nom, telephone, email, type_client, categorie_client, budget, secteur, notes, projet_client } = editClient
+    const { error } = await supabase
+      .from("clients")
+      .update({ nom, telephone, email, type_client, categorie_client, budget: Number(budget) || null, secteur, notes, projet_client })
+      .eq("id", id)
+    if (error) {
+      alert("Erreur : " + error.message)
+    } else {
+      setClients(prev => prev.map(c => c.id === id ? { ...c, ...editClient } : c))
+      closeEdit()
+    }
+    setSaving(false)
   }
 
   const badgeStyle = (active) => `px-3 py-1 rounded-md text-[11px] uppercase tracking-wider font-bold transition-all ${
@@ -97,7 +157,9 @@ export default function Patrimoine() {
                   <button onClick={() => updateClient(client.id, { plain_pied: !client.plain_pied })} className={badgeStyle(client.plain_pied)}>Rapport</button>
                   <button className={badgeStyle(true)}>Zone {client.secteur || 'À définir'}</button>
                 </div>
-                <button style={{ fontSize: "11px", color: "rgba(255,255,255,0.70)", letterSpacing: "0.12em", textTransform: "uppercase", background: "none", border: "none", cursor: "pointer", textAlign: "left", fontWeight: "600" }}
+                <button
+                  onClick={() => openEdit(client)}
+                  style={{ fontSize: "11px", color: "#7BA7D4", letterSpacing: "0.12em", textTransform: "uppercase", background: "none", border: "none", cursor: "pointer", textAlign: "left", fontWeight: "600", fontFamily: "'DM Sans', sans-serif" }}
                   className="hover:text-white transition-colors">
                   → Historique des échanges
                 </button>
@@ -115,6 +177,164 @@ export default function Patrimoine() {
           </div>
         )}
       </div>
+
+      {/* ── MODAL HISTORIQUE & ÉDITION ── */}
+      {editClient && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.80)", backdropFilter: "blur(10px)" }}
+          onClick={(e) => { if (e.target === e.currentTarget) closeEdit() }}
+        >
+          <div
+            className="w-full max-w-2xl rounded-[32px] p-10 relative"
+            style={{
+              background: "rgba(10, 12, 18, 0.97)",
+              border: "1px solid rgba(74,111,165,0.40)",
+              boxShadow: "0 0 80px rgba(74,111,165,0.08), 0 40px 100px rgba(0,0,0,0.7)",
+              maxHeight: "90vh",
+              overflowY: "auto",
+            }}
+          >
+            <button onClick={closeEdit} className="absolute top-6 right-7 text-white/40 hover:text-white/80 transition-colors text-2xl leading-none">×</button>
+
+            <div className="mb-8">
+              <p style={{ color: "#7BA7D4", fontSize: "11px", letterSpacing: "0.25em", textTransform: "uppercase", fontWeight: "600", marginBottom: "8px" }}>
+                Dossier Patrimoine
+              </p>
+              <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "clamp(1.6rem, 3vw, 2.2rem)", fontWeight: "300", color: "#fff", lineHeight: 1 }}>
+                {editClient.nom}
+              </h2>
+            </div>
+
+            <form onSubmit={handleSave} className="space-y-6">
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label style={labelStyle}>Nom complet</label>
+                  <input required type="text" style={inputStyle}
+                    value={editClient.nom || ""}
+                    onFocus={(e) => e.target.style.borderColor = "#7BA7D4"}
+                    onBlur={(e)  => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
+                    onChange={(e) => setEditClient({ ...editClient, nom: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Type de projet</label>
+                  <select style={inputStyle}
+                    value={editClient.projet_client || "défiscalisation"}
+                    onFocus={(e) => e.target.style.borderColor = "#7BA7D4"}
+                    onBlur={(e)  => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
+                    onChange={(e) => setEditClient({ ...editClient, projet_client: e.target.value })}
+                  >
+                    <option value="résidence principale"   className="bg-slate-900">Résidence principale</option>
+                    <option value="résidence secondaire"   className="bg-slate-900">Résidence secondaire</option>
+                    <option value="investissement locatif" className="bg-slate-900">Investissement locatif</option>
+                    <option value="location saisonnière"   className="bg-slate-900">Location saisonnière</option>
+                    <option value="défiscalisation"        className="bg-slate-900">Défiscalisation</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label style={labelStyle}>Téléphone</label>
+                  <input type="tel" style={inputStyle}
+                    value={editClient.telephone || ""}
+                    onFocus={(e) => e.target.style.borderColor = "#7BA7D4"}
+                    onBlur={(e)  => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
+                    onChange={(e) => setEditClient({ ...editClient, telephone: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Email</label>
+                  <input type="email" style={inputStyle}
+                    value={editClient.email || ""}
+                    onFocus={(e) => e.target.style.borderColor = "#7BA7D4"}
+                    onBlur={(e)  => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
+                    onChange={(e) => setEditClient({ ...editClient, email: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label style={labelStyle}>Enveloppe (€)</label>
+                  <input type="number" style={inputStyle}
+                    value={editClient.budget || ""}
+                    onFocus={(e) => e.target.style.borderColor = "#7BA7D4"}
+                    onBlur={(e)  => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
+                    onChange={(e) => setEditClient({ ...editClient, budget: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Secteur / Zone</label>
+                  <input type="text" style={inputStyle}
+                    value={editClient.secteur || ""}
+                    onFocus={(e) => e.target.style.borderColor = "#7BA7D4"}
+                    onBlur={(e)  => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
+                    onChange={(e) => setEditClient({ ...editClient, secteur: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              {/* Historique des échanges */}
+              <div>
+                <label style={{ ...labelStyle, color: "#7BA7D4" }}>Historique des échanges</label>
+
+                {/* Historique existant */}
+                <div style={{ background: "rgba(0,0,0,0.30)", border: "1px solid rgba(74,111,165,0.20)", borderRadius: "12px", padding: "16px", minHeight: "100px", marginBottom: "12px", maxHeight: "160px", overflowY: "auto" }}>
+                  {editClient.notes ? (
+                    editClient.notes.split("\n").map((line, i) => (
+                      <p key={i} style={{ fontSize: "12px", color: "rgba(255,255,255,0.75)", lineHeight: 1.7, fontStyle: line.startsWith("[") ? "normal" : "italic" }}>
+                        {line}
+                      </p>
+                    ))
+                  ) : (
+                    <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)", fontStyle: "italic" }}>Aucun échange enregistré pour ce dossier.</p>
+                  )}
+                </div>
+
+                {/* Ajouter une note */}
+                <div className="flex gap-3">
+                  <input
+                    type="text"
+                    placeholder="Ajouter un échange (appel, visite, proposition...)..."
+                    style={{ ...inputStyle, flex: 1 }}
+                    value={newNote}
+                    onFocus={(e) => e.target.style.borderColor = "#7BA7D4"}
+                    onBlur={(e)  => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
+                    onChange={(e) => setNewNote(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); ajouterNote() } }}
+                  />
+                  <button
+                    type="button"
+                    onClick={ajouterNote}
+                    style={{ padding: "0 20px", borderRadius: "14px", background: "rgba(74,111,165,0.20)", border: "1px solid rgba(74,111,165,0.40)", color: "#7BA7D4", fontSize: "11px", fontWeight: "600", letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", whiteSpace: "nowrap", transition: "all 0.2s" }}
+                    onMouseOver={(e) => e.target.style.background = "rgba(74,111,165,0.35)"}
+                    onMouseOut={(e)  => e.target.style.background = "rgba(74,111,165,0.20)"}
+                  >
+                    + Ajouter
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex gap-4 pt-2">
+                <button type="button" onClick={closeEdit}
+                  className="flex-1 py-4 rounded-full border border-white/15 text-white/60 hover:text-white/90 hover:border-white/30 transition-all text-xs uppercase tracking-[0.2em] font-semibold">
+                  Annuler
+                </button>
+                <button type="submit" disabled={saving}
+                  style={{ background: "rgba(74,111,165,0.85)", color: "#fff", flex: 1 }}
+                  className="py-4 rounded-full font-bold uppercase tracking-[0.2em] text-xs hover:opacity-90 transition-all disabled:opacity-50">
+                  {saving ? "Enregistrement..." : "Sauvegarder"}
+                </button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }

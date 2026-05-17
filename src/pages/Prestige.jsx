@@ -1,9 +1,35 @@
 import { useEffect, useState } from "react"
 import { supabase } from "../supabase"
 
+const inputStyle = {
+  width: "100%",
+  background: "rgba(255,255,255,0.05)",
+  border: "1px solid rgba(255,255,255,0.12)",
+  borderRadius: "14px",
+  padding: "14px 20px",
+  outline: "none",
+  color: "#fff",
+  fontSize: "14px",
+  fontFamily: "'DM Sans', sans-serif",
+  transition: "border-color 0.2s",
+}
+
+const labelStyle = {
+  fontSize: "11px",
+  fontWeight: "600",
+  letterSpacing: "0.18em",
+  textTransform: "uppercase",
+  color: "rgba(255,255,255,0.75)",
+  display: "block",
+  marginBottom: "8px",
+  fontFamily: "'DM Sans', sans-serif",
+}
+
 export default function Prestige() {
-  const [clients, setClients] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [clients, setClients]       = useState([])
+  const [loading, setLoading]       = useState(true)
+  const [editClient, setEditClient] = useState(null)
+  const [saving, setSaving]         = useState(false)
 
   useEffect(() => { fetchClients() }, [])
 
@@ -20,7 +46,27 @@ export default function Prestige() {
 
   async function updateClient(clientId, updates) {
     const { error } = await supabase.from("clients").update(updates).eq("id", clientId)
-    if (!error) setClients((prev) => prev.map((c) => (c.id === clientId ? { ...c, ...updates } : c)))
+    if (!error) setClients(prev => prev.map(c => c.id === clientId ? { ...c, ...updates } : c))
+  }
+
+  function openEdit(client) { setEditClient({ ...client }) }
+  function closeEdit()      { setEditClient(null) }
+
+  async function handleSave(e) {
+    e.preventDefault()
+    setSaving(true)
+    const { id, nom, telephone, email, type_client, budget, secteur, notes } = editClient
+    const { error } = await supabase
+      .from("clients")
+      .update({ nom, telephone, email, type_client, budget: Number(budget) || null, secteur, notes })
+      .eq("id", id)
+    if (error) {
+      alert("Erreur : " + error.message)
+    } else {
+      setClients(prev => prev.map(c => c.id === id ? { ...c, ...editClient } : c))
+      closeEdit()
+    }
+    setSaving(false)
   }
 
   const card = {
@@ -58,7 +104,7 @@ export default function Prestige() {
   return (
     <div style={{ fontFamily: "'DM Sans', sans-serif", padding: "28px", color: "#fff" }}>
 
-      {/* En-tête — charte Dashboard */}
+      {/* En-tête */}
       <div className="mb-10">
         <p style={{ color: "#C4A882", fontSize: "11px", letterSpacing: "0.25em", textTransform: "uppercase", fontWeight: "600", marginBottom: "10px" }}>
           Sélection Exclusive
@@ -107,7 +153,7 @@ export default function Prestige() {
                 </div>
               </div>
 
-              {/* Prestations */}
+              {/* Prestations + bouton */}
               <div style={{ minWidth: "200px" }} className="flex flex-col justify-between gap-4">
                 <div className="flex flex-wrap lg:justify-end gap-2">
                   <button onClick={() => updateClient(client.id, { vue_mer: !client.vue_mer })} style={badgeStyle(client.vue_mer)}>Vue Mer</button>
@@ -115,14 +161,29 @@ export default function Prestige() {
                   <button onClick={() => updateClient(client.id, { varangue: !client.varangue })} style={badgeStyle(client.varangue)}>Varangue</button>
                 </div>
                 <button
-                  style={{ width: "100%", padding: "12px", borderRadius: "8px", background: "transparent", border: "1px solid rgba(196,168,130,0.45)", color: "#C4A882", fontSize: "11px", fontWeight: "600", letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", transition: "all 0.2s", fontFamily: "'DM Sans', sans-serif" }}
+                  onClick={() => openEdit(client)}
+                  style={{
+                    width: "100%", padding: "12px", borderRadius: "8px",
+                    background: "transparent", border: "1px solid rgba(196,168,130,0.45)",
+                    color: "#C4A882", fontSize: "11px", fontWeight: "600",
+                    letterSpacing: "0.12em", textTransform: "uppercase",
+                    cursor: "pointer", transition: "all 0.2s",
+                    fontFamily: "'DM Sans', sans-serif",
+                  }}
                   onMouseOver={(e) => { e.target.style.background = "rgba(196,168,130,0.12)" }}
-                  onMouseOut={(e) => { e.target.style.background = "transparent" }}
+                  onMouseOut={(e)  => { e.target.style.background = "transparent" }}
                 >
                   Ouvrir le dossier
                 </button>
               </div>
             </div>
+
+            {/* Notes */}
+            {client.notes && (
+              <div style={{ marginTop: "20px", borderTop: "1px solid rgba(196,168,130,0.12)", paddingTop: "16px", fontSize: "13px", color: "rgba(255,255,255,0.70)", fontStyle: "italic", fontWeight: "300", lineHeight: 1.6 }}>
+                {client.notes}
+              </div>
+            )}
 
           </div>
         ))}
@@ -135,6 +196,136 @@ export default function Prestige() {
           </div>
         )}
       </div>
+
+      {/* ── MODAL DOSSIER PRESTIGE ── */}
+      {editClient && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.80)", backdropFilter: "blur(10px)" }}
+          onClick={(e) => { if (e.target === e.currentTarget) closeEdit() }}
+        >
+          <div
+            className="w-full max-w-2xl rounded-[32px] p-10 relative"
+            style={{
+              background: "rgba(12, 9, 6, 0.97)",
+              border: "1px solid rgba(196,168,130,0.35)",
+              boxShadow: "0 0 80px rgba(196,168,130,0.08), 0 40px 100px rgba(0,0,0,0.7)",
+              maxHeight: "90vh",
+              overflowY: "auto",
+            }}
+          >
+            <button onClick={closeEdit} className="absolute top-6 right-7 text-white/40 hover:text-white/80 transition-colors text-2xl leading-none">×</button>
+
+            <div className="mb-8">
+              <div className="flex items-center gap-3 mb-2">
+                <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#C4A882", display: "inline-block" }} />
+                <p style={{ color: "#C4A882", fontSize: "11px", letterSpacing: "0.25em", textTransform: "uppercase", fontWeight: "600" }}>
+                  Dossier Prestige
+                </p>
+              </div>
+              <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "clamp(1.6rem, 3vw, 2.2rem)", fontWeight: "300", color: "#fff", lineHeight: 1 }}>
+                {editClient.nom}
+              </h2>
+              <div style={{ width: "30px", height: "1px", background: "#C4A882", marginTop: "12px", opacity: 0.5 }} />
+            </div>
+
+            <form onSubmit={handleSave} className="space-y-6">
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label style={labelStyle}>Nom complet</label>
+                  <input required type="text" style={inputStyle}
+                    value={editClient.nom || ""}
+                    onFocus={(e) => e.target.style.borderColor = "#C4A882"}
+                    onBlur={(e)  => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
+                    onChange={(e) => setEditClient({ ...editClient, nom: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Type de projet</label>
+                  <select style={inputStyle}
+                    value={editClient.type_client || "acquereur"}
+                    onFocus={(e) => e.target.style.borderColor = "#C4A882"}
+                    onBlur={(e)  => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
+                    onChange={(e) => setEditClient({ ...editClient, type_client: e.target.value })}
+                  >
+                    <option value="acquereur" className="bg-slate-900">Acquéreur</option>
+                    <option value="vendeur"   className="bg-slate-900">Vendeur</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label style={labelStyle}>Téléphone</label>
+                  <input type="tel" style={inputStyle}
+                    value={editClient.telephone || ""}
+                    onFocus={(e) => e.target.style.borderColor = "#C4A882"}
+                    onBlur={(e)  => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
+                    onChange={(e) => setEditClient({ ...editClient, telephone: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Email</label>
+                  <input type="email" style={inputStyle}
+                    value={editClient.email || ""}
+                    onFocus={(e) => e.target.style.borderColor = "#C4A882"}
+                    onBlur={(e)  => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
+                    onChange={(e) => setEditClient({ ...editClient, email: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label style={labelStyle}>Budget / Prix (€)</label>
+                  <input type="number" style={inputStyle}
+                    value={editClient.budget || ""}
+                    onFocus={(e) => e.target.style.borderColor = "#C4A882"}
+                    onBlur={(e)  => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
+                    onChange={(e) => setEditClient({ ...editClient, budget: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Localisation</label>
+                  <input type="text" style={inputStyle}
+                    value={editClient.secteur || ""}
+                    onFocus={(e) => e.target.style.borderColor = "#C4A882"}
+                    onBlur={(e)  => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
+                    onChange={(e) => setEditClient({ ...editClient, secteur: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={labelStyle}>Notes & Critères</label>
+                <textarea rows="4"
+                  style={{ ...inputStyle, resize: "vertical" }}
+                  placeholder="Villa avec vue mer, piscine à débordement, varangue couverte..."
+                  value={editClient.notes || ""}
+                  onFocus={(e) => e.target.style.borderColor = "#C4A882"}
+                  onBlur={(e)  => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
+                  onChange={(e) => setEditClient({ ...editClient, notes: e.target.value })}
+                />
+              </div>
+
+              <div className="flex gap-4 pt-2">
+                <button type="button" onClick={closeEdit}
+                  className="flex-1 py-4 rounded-full border border-white/15 text-white/60 hover:text-white/90 hover:border-white/30 transition-all text-xs uppercase tracking-[0.2em] font-semibold">
+                  Annuler
+                </button>
+                <button type="submit" disabled={saving}
+                  style={{ background: saving ? "rgba(196,168,130,0.5)" : "#C4A882", color: "#000" }}
+                  className="flex-1 py-4 rounded-full font-bold uppercase tracking-[0.2em] text-xs hover:opacity-90 transition-all disabled:opacity-50">
+                  {saving ? "Enregistrement..." : "Sauvegarder le dossier"}
+                </button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }
