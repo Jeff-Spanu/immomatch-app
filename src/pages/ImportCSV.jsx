@@ -2,12 +2,19 @@ import { useState } from "react"
 import Papa from "papaparse"
 import { supabase } from "../supabase"
 
+function getTable(type_client, categorie_client) {
+  if (type_client === "vendeur"   && categorie_client === "prestige")   return "vendeurs_prestige"
+  if (type_client === "acquereur" && categorie_client === "patrimoine") return "acquereurs_patrimoine"
+  if (type_client === "vendeur")   return "vendeurs"
+  return "acquereurs"
+}
+
 export default function ImportCSV() {
-  const [message, setMessage]       = useState("")
-  const [loading, setLoading]       = useState(false)
-  const [typeClient, setTypeClient] = useState("vendeur")
+  const [message, setMessage]               = useState("")
+  const [loading, setLoading]               = useState(false)
+  const [typeClient, setTypeClient]         = useState("acquereur")
   const [categorieClient, setCategorieClient] = useState("standard")
-  const [projetClient, setProjetClient]       = useState("résidence principale")
+  const [projetClient, setProjetClient]     = useState("résidence principale")
 
   async function handleFile(e) {
     const file = e.target.files[0]
@@ -23,42 +30,47 @@ export default function ImportCSV() {
           const rows = results.data
           console.log("Colonnes détectées :", Object.keys(rows[0]))
 
+          const table = getTable(typeClient, categorieClient)
+
           const clientsCRM = rows.map((row) => {
             const nomComplet = row["Name"] || row["Display Name"] || row["Nom"]
             const prenom     = row["First Name"] || row["Prénom"] || ""
-            const nomFamille = row["Last Name"] || row["Nom de famille"] || ""
+            const nomFamille = row["Last Name"]  || row["Nom de famille"] || ""
             const nomFinal   = nomComplet || `${prenom} ${nomFamille}`.trim() || "Contact Sans Nom"
             const rawBudget  = row["Budget"] || row["Prix"] || "0"
             const cleanBudget = parseInt(rawBudget.replace(/[^0-9]/g, "")) || 0
 
             return {
-              nom: nomFinal,
-              telephone: row["Phone 1 - Value"] || row["Mobile Phone"] || row["Téléphone"] || "",
-              email: row["E-mail 1 - Value"] || row["E-mail"] || "",
-              notes: row["Notes"] || "",
-              secteur: row["Address 1 - City"] || row["Secteur"] || row["Ville"] || "",
-              type_client: typeClient,
+              nom:              nomFinal,
+              telephone:        row["Phone 1 - Value"] || row["Mobile Phone"] || row["Téléphone"] || "",
+              email:            row["E-mail 1 - Value"] || row["E-mail"] || "",
+              notes:            row["Notes"] || "",
+              secteur:          row["Address 1 - City"] || row["Secteur"] || row["Ville"] || "",
               categorie_client: categorieClient,
-              projet_client: projetClient,
-              statut: "prospect",
-              budget: cleanBudget,
-              type_bien: row["Type de bien"] || row["Recherche"] || "",
-              nb_chambres: parseInt(row["Nb chambres"]) || null,
-              altitude: row["Altitude"] || "",
-              vue_mer:  String(row["Vue mer"]  || "").toUpperCase() === "TRUE",
-              piscine:  String(row["Piscine"]  || "").toUpperCase() === "TRUE",
-              garage:   String(row["Garage"]   || "").toUpperCase() === "TRUE",
-              varangue: String(row["Varangue"] || "").toUpperCase() === "TRUE",
+              projet_client:    projetClient,
+              statut:           "prospect",
+              budget:           cleanBudget,
+              type_bien:        row["Type de bien"] || row["Recherche"] || "",
+              nb_chambres:      row["Nb chambres"] || "",
+              altitude:         row["Altitude"] || "",
+              vue_mer:          String(row["Vue mer"]      || "").toUpperCase() === "TRUE",
+              vue_montagne:     String(row["Vue montagne"] || "").toUpperCase() === "TRUE",
+              piscine:          String(row["Piscine"]      || "").toUpperCase() === "TRUE",
+              garage:           String(row["Garage"]       || "").toUpperCase() === "TRUE",
+              dependance:       String(row["Dependance"]   || "").toUpperCase() === "TRUE",
+              plain_pied:       String(row["Plain pied"]   || "").toUpperCase() === "TRUE",
+              surface_habitable: parseFloat(row["Surface habitable"]) || null,
+              surface_terrain:   parseFloat(row["Surface terrain"])   || null,
             }
           })
 
-          const { error } = await supabase.from("clients").insert(clientsCRM)
-          if (error) { console.error("Détails erreur Supabase :", error); throw error }
-          setMessage(`${clientsCRM.length} contacts importés avec succès ! ✅`)
+          const { error } = await supabase.from(table).insert(clientsCRM)
+          if (error) { console.error("Erreur Supabase :", error); throw error }
+          setMessage(`✅ ${clientsCRM.length} contacts importés dans "${table}"`)
 
         } catch (err) {
           console.error(err)
-          setMessage(`Erreur : ${err.message || "Problème de colonnes"}. ❌`)
+          setMessage(`❌ Erreur : ${err.message || "Problème lors de l'import"}`)
         } finally {
           setLoading(false)
         }
@@ -66,7 +78,7 @@ export default function ImportCSV() {
       error: function(error) {
         console.error(error)
         setLoading(false)
-        setMessage("Erreur de lecture du fichier CSV. ❌")
+        setMessage("❌ Erreur de lecture du fichier CSV.")
       }
     })
   }
@@ -84,44 +96,44 @@ export default function ImportCSV() {
     outline: "none", fontFamily: "'DM Sans', sans-serif",
   }
 
+  const tableDestination = getTable(typeClient, categorieClient)
+
   return (
     <div style={{ fontFamily: "'DM Sans', sans-serif", padding: "40px", color: "#fff" }}>
 
-      {/* En-tête — charte Dashboard */}
       <div className="mb-10">
         <p style={{ color: "#C4A882", fontSize: "11px", letterSpacing: "0.25em", textTransform: "uppercase", fontWeight: "600", marginBottom: "10px" }}>
           Import CRM
         </p>
         <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "clamp(2rem, 4vw, 3rem)", fontWeight: "300", letterSpacing: "0.02em", lineHeight: 1, color: "#fff", marginBottom: "10px" }}>
-          Import Clients
+          Import Contacts
         </h1>
         <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.70)" }}>
-          Base Google Contacts & Keep Note
+          Google Contacts · CSV · WhatsApp
         </p>
       </div>
 
       <div className="liquid-glass rounded-3xl p-10 max-w-3xl">
 
-        {/* Sélecteurs */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
+        <div className="grid md:grid-cols-3 gap-6 mb-6">
           <div>
             <label style={labelStyle}>Type client</label>
             <select value={typeClient} onChange={(e) => setTypeClient(e.target.value)} style={selectStyle}
               onFocus={(e) => e.target.style.borderColor = "#C4A882"}
-              onBlur={(e) => e.target.style.borderColor = "rgba(255,255,255,0.12)"}>
-              <option value="vendeur"   className="bg-slate-900">Vendeur</option>
+              onBlur={(e)  => e.target.style.borderColor = "rgba(255,255,255,0.12)"}>
               <option value="acquereur" className="bg-slate-900">Acquéreur</option>
+              <option value="vendeur"   className="bg-slate-900">Vendeur</option>
             </select>
           </div>
 
           <div>
-            <label style={labelStyle}>Dossier</label>
+            <label style={labelStyle}>Catégorie</label>
             <select value={categorieClient} onChange={(e) => setCategorieClient(e.target.value)} style={selectStyle}
               onFocus={(e) => e.target.style.borderColor = "#C4A882"}
-              onBlur={(e) => e.target.style.borderColor = "rgba(255,255,255,0.12)"}>
+              onBlur={(e)  => e.target.style.borderColor = "rgba(255,255,255,0.12)"}>
               <option value="standard"   className="bg-slate-900">Standard</option>
-              <option value="prestige"   className="bg-slate-900">Prestige 💎</option>
-              <option value="patrimoine" className="bg-slate-900">Patrimoine 🏛️</option>
+              <option value="prestige"   className="bg-slate-900">Prestige</option>
+              <option value="patrimoine" className="bg-slate-900">Patrimoine</option>
             </select>
           </div>
 
@@ -129,29 +141,35 @@ export default function ImportCSV() {
             <label style={labelStyle}>Projet par défaut</label>
             <select value={projetClient} onChange={(e) => setProjetClient(e.target.value)} style={selectStyle}
               onFocus={(e) => e.target.style.borderColor = "#C4A882"}
-              onBlur={(e) => e.target.style.borderColor = "rgba(255,255,255,0.12)"}>
-              <option value="résidence principale"  className="bg-slate-900">Résidence principale</option>
-              <option value="résidence secondaire"  className="bg-slate-900">Résidence secondaire</option>
+              onBlur={(e)  => e.target.style.borderColor = "rgba(255,255,255,0.12)"}>
+              <option value="résidence principale"   className="bg-slate-900">Résidence principale</option>
+              <option value="résidence secondaire"   className="bg-slate-900">Résidence secondaire</option>
               <option value="investissement locatif" className="bg-slate-900">Investissement locatif</option>
+              <option value="location saisonnière"   className="bg-slate-900">Location saisonnière</option>
+              <option value="défiscalisation"        className="bg-slate-900">Défiscalisation</option>
             </select>
           </div>
         </div>
 
+        {/* Table destination visible */}
+        <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", marginBottom: "20px", letterSpacing: "0.1em" }}>
+          → Destination : <span style={{ color: "#C4A882" }}>{tableDestination}</span>
+        </p>
+
         {/* Zone drop */}
         <div style={{ border: "1.5px dashed rgba(196,168,130,0.35)", borderRadius: "16px", padding: "48px 32px", textAlign: "center", position: "relative", transition: "border-color 0.2s", cursor: "pointer" }}
           onMouseOver={(e) => e.currentTarget.style.borderColor = "rgba(196,168,130,0.70)"}
-          onMouseOut={(e) => e.currentTarget.style.borderColor = "rgba(196,168,130,0.35)"}>
+          onMouseOut={(e)  => e.currentTarget.style.borderColor = "rgba(196,168,130,0.35)"}>
           <input type="file" accept=".csv" onChange={handleFile}
             style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }} />
           <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.80)", fontWeight: "400" }}>
-            Cliquez ou glissez votre fichier Google CSV ici
+            Cliquez ou glissez votre fichier CSV ici
           </p>
           <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.45)", marginTop: "8px", letterSpacing: "0.08em" }}>
-            Format .csv — Google Contacts ou Keep
+            Format .csv — Google Contacts ou export personnalisé
           </p>
         </div>
 
-        {/* Messages */}
         {loading && (
           <p style={{ color: "#C4A882", marginTop: "24px", textAlign: "center", fontSize: "13px" }} className="animate-pulse">
             Analyse et importation...
@@ -159,9 +177,9 @@ export default function ImportCSV() {
         )}
         {!loading && message && (
           <div style={{ marginTop: "24px", padding: "16px", borderRadius: "12px", textAlign: "center", fontSize: "13px", fontWeight: "500",
-            background: message.includes('Erreur') ? "rgba(239,68,68,0.12)" : "rgba(52,211,153,0.12)",
-            color:      message.includes('Erreur') ? "#f87171" : "#34d399",
-            border:     message.includes('Erreur') ? "1px solid rgba(239,68,68,0.25)" : "1px solid rgba(52,211,153,0.25)"
+            background: message.includes("❌") ? "rgba(239,68,68,0.12)" : "rgba(52,211,153,0.12)",
+            color:      message.includes("❌") ? "#f87171" : "#34d399",
+            border:     message.includes("❌") ? "1px solid rgba(239,68,68,0.25)" : "1px solid rgba(52,211,153,0.25)"
           }}>
             {message}
           </div>
