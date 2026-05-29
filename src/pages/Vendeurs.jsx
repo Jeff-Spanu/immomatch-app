@@ -64,6 +64,7 @@ export default function Vendeurs() {
   const [loading, setLoading]       = useState(true)
   const [editClient, setEditClient] = useState(null)
   const [saving, setSaving]         = useState(false)
+  const [search, setSearch]         = useState("")
 
   useEffect(() => { fetchClients() }, [])
 
@@ -143,10 +144,33 @@ export default function Vendeurs() {
   const focus = (e) => e.target.style.borderColor = "#34d399"
   const blur  = (e) => e.target.style.borderColor = "rgba(255,255,255,0.12)"
 
-  return (
-    <div style={{ fontFamily: "'DM Sans', sans-serif", padding: "28px", color: "#fff" }}>
+  const q = search.toLowerCase()
+  const filteredClients = search
+    ? clients.filter(c =>
+        (c.nom || '').toLowerCase().includes(q) ||
+        (c.secteur || '').toLowerCase().includes(q) ||
+        (c.type_bien || '').toLowerCase().includes(q) ||
+        (c.telephone || '').toLowerCase().includes(q)
+      )
+    : clients
 
-      <div className="mb-8 flex justify-between items-end">
+  return (
+    <div style={{ fontFamily: "'DM Sans', sans-serif", padding: "16px", color: "#fff" }}>
+
+      <div className="mb-6 flex items-center gap-3 liquid-glass rounded-2xl px-4 py-2.5 border border-white/10">
+        <span className="text-white/40 text-sm">🔍</span>
+        <input
+          type="text"
+          placeholder="Rechercher par nom, secteur, type..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="flex-1 bg-transparent text-white placeholder:text-white/30 text-sm outline-none"
+        />
+        {search && (
+          <button onClick={() => setSearch('')} className="text-white/40 hover:text-white/70 text-xs">✕</button>
+        )}
+      </div>
+      <div className="mb-5 flex justify-between items-end">
         <div>
           <p style={{ color: "#C4A882", fontSize: "11px", letterSpacing: "0.25em", textTransform: "uppercase", fontWeight: "600", marginBottom: "10px" }}>Mandats de vente</p>
           <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "clamp(2rem, 4vw, 3rem)", fontWeight: "300", letterSpacing: "0.02em", lineHeight: 1 }}>Vendeurs</h1>
@@ -158,7 +182,7 @@ export default function Vendeurs() {
       </div>
 
       <div>
-        {clients.map((client) => (
+        {filteredClients.map((client) => (
           <div key={client.id} style={card}>
             <div className="flex flex-col lg:flex-row justify-between gap-6">
               <div className="flex-1">
