@@ -1,43 +1,43 @@
 import { useState } from "react"
 import { supabase } from "../supabase"
 
-// ─── Données La Réunion ───────────────────────────────────────────────────────
+// âââ DonnÃ©es La RÃ©union âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 const SECTEURS = [
   { groupe: "Nord",  list: ["Saint-Denis", "Sainte-Marie", "Sainte-Suzanne"] },
-  { groupe: "Est",   list: ["Saint-André", "Bras-Panon", "Saint-Benoît", "Sainte-Rose"] },
-  { groupe: "Sud",   list: ["Saint-Pierre", "Saint-Joseph", "Petite-Île", "Le Tampon", "Entre-Deux", "Saint-Louis", "Étang-Salé", "Saint-Philippe"] },
+  { groupe: "Est",   list: ["Saint-AndrÃ©", "Bras-Panon", "Saint-BenoÃ®t", "Sainte-Rose"] },
+  { groupe: "Sud",   list: ["Saint-Pierre", "Saint-Joseph", "Petite-Ãle", "Le Tampon", "Entre-Deux", "Saint-Louis", "Ãtang-SalÃ©", "Saint-Philippe"] },
   { groupe: "Ouest", list: ["Saint-Paul", "Saint-Leu", "Trois-Bassins", "La Possession", "Le Port"] },
   { groupe: "Hauts", list: ["Cilaos", "Salazie", "Plaine-des-Palmistes", "La Montagne"] },
 ]
 
 const TYPES_BIEN = [
-  { label: "Villa",       icon: "🏡" },
-  { label: "Maison",      icon: "🏠" },
-  { label: "Appartement", icon: "🏢" },
-  { label: "Studio",      icon: "🛋️" },
-  { label: "Terrain",     icon: "🌿" },
-  { label: "Immeuble",    icon: "🏗️" },
+  { label: "Villa",       icon: "ð¡" },
+  { label: "Maison",      icon: "ð " },
+  { label: "Appartement", icon: "ð¢" },
+  { label: "Studio",      icon: "ðï¸" },
+  { label: "Terrain",     icon: "ð¿" },
+  { label: "Immeuble",    icon: "ðï¸" },
 ]
 
 const CHAMBRES = ["T1", "T2", "T3", "T4", "T5", "T6+"]
 
 const ALTITUDE = [
-  { label: "Littoral",  sub: "0–100m",    value: "0-100" },
-  { label: "Mi-pente",  sub: "100–800m",  value: "100-800" },
-  { label: "Hauteurs",  sub: "800–1200m", value: "800-1200" },
+  { label: "Littoral",  sub: "0â100m",    value: "0-100" },
+  { label: "Mi-pente",  sub: "100â800m",  value: "100-800" },
+  { label: "Hauteurs",  sub: "800â1200m", value: "800-1200" },
   { label: "Altitude",  sub: "1200m+",    value: "1200+" },
 ]
 
 const CRITERES_BOOL = [
-  { key: "piscine",      label: "Piscine",      icon: "🏊" },
-  { key: "vue_mer",      label: "Vue Mer",      icon: "🌊" },
-  { key: "vue_montagne", label: "Vue Montagne", icon: "⛰️" },
-  { key: "garage",       label: "Garage",       icon: "🚗" },
-  { key: "dependance",   label: "Dépendance",   icon: "🏡" },
-  { key: "plain_pied",   label: "Plain-pied",   icon: "🏠" },
+  { key: "piscine",      label: "Piscine",      icon: "ð" },
+  { key: "vue_mer",      label: "Vue Mer",      icon: "ð" },
+  { key: "vue_montagne", label: "Vue Montagne", icon: "â°ï¸" },
+  { key: "garage",       label: "Garage",       icon: "ð" },
+  { key: "dependance",   label: "DÃ©pendance",   icon: "ð¡" },
+  { key: "plain_pied",   label: "Plain-pied",   icon: "ð " },
 ]
 
-// ─── Scanner de notes ─────────────────────────────────────────────────────────
+// âââ Scanner de notes âââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function scanNotes(txt = "") {
   const n = txt.toLowerCase()
   const toutes = SECTEURS.flatMap(g => g.list)
@@ -59,13 +59,13 @@ function scanNotes(txt = "") {
     vue_mer:      n.includes("vue mer") || n.includes("bord de mer") || n.includes("face mer"),
     vue_montagne: n.includes("vue montagne") || n.includes("cirque") || n.includes("piton"),
     garage:       n.includes("garage") || n.includes("box") || n.includes("parking"),
-    dependance:   n.includes("dépendance") || n.includes("dependance") || n.includes("studio indép"),
+    dependance:   n.includes("dÃ©pendance") || n.includes("dependance") || n.includes("studio indÃ©p"),
     plain_pied:   n.includes("plain-pied") || n.includes("plain pied"),
     budget, nb_chambres, secteur,
   }
 }
 
-// ─── Routing vers la bonne table ─────────────────────────────────────────────
+// âââ Routing vers la bonne table âââââââââââââââââââââââââââââââââââââââââââââ
 function getTable(type_client, categorie_client) {
   if (type_client === "vendeur" && categorie_client === "prestige")   return "vendeurs_prestige"
   if (type_client === "acquereur" && categorie_client === "patrimoine") return "acquereurs_patrimoine"
@@ -73,7 +73,7 @@ function getTable(type_client, categorie_client) {
   return "acquereurs"
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
+// âââ Styles âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 const inputStyle = {
   width: "100%",
   background: "rgba(255,255,255,0.05)",
@@ -121,7 +121,7 @@ const EMPTY_FORM = {
   nb_chambres: "",
   surface_habitable: "",
   surface_terrain: "",
-  projet_client: "résidence principale",
+  projet_client: "rÃ©sidence principale",
   piscine: false, vue_mer: false, vue_montagne: false,
   garage: false, dependance: false, plain_pied: false,
   notes: "",
@@ -151,7 +151,7 @@ export default function NouveauClient() {
       CRITERES_BOOL.forEach(({ key }) => {
         if (p[key] && !prev[key]) { next[key] = true; found.push(key) }
       })
-      if (p.budget     && !prev.budget)      { next.budget      = p.budget;      found.push(`${Number(p.budget).toLocaleString()} €`) }
+      if (p.budget     && !prev.budget)      { next.budget      = p.budget;      found.push(`${Number(p.budget).toLocaleString()} â¬`) }
       if (p.nb_chambres && !prev.nb_chambres){ next.nb_chambres = p.nb_chambres; found.push(p.nb_chambres) }
       if (p.secteur    && !prev.secteur)     { next.secteur     = p.secteur;     found.push(p.secteur) }
       return next
@@ -159,8 +159,8 @@ export default function NouveauClient() {
     setTimeout(() => {
       setScanning(false)
       setScanResult(found.length
-        ? `✓ Extrait : ${found.join(", ")}`
-        : "Aucun critère supplémentaire détecté.")
+        ? `â Extrait : ${found.join(", ")}`
+        : "Aucun critÃ¨re supplÃ©mentaire dÃ©tectÃ©.")
     }, 600)
   }
 
@@ -192,10 +192,10 @@ export default function NouveauClient() {
   }
 
   return (
-    <div className="p-10 max-w-4xl mx-auto">
+    <div className="p-5 max-w-4xl mx-auto">
 
-      {/* En-tête */}
-      <div className="mb-10">
+      {/* En-tÃªte */}
+      <div className="mb-3">
         <p style={{ color: "#C4A882", fontSize: "11px", letterSpacing: "0.25em", textTransform: "uppercase", fontWeight: "600", marginBottom: "10px" }}>
           Gestion Portefeuille
         </p>
@@ -206,22 +206,22 @@ export default function NouveauClient() {
 
       {success && (
         <div style={{ marginBottom: "24px", padding: "16px 24px", borderRadius: "16px", background: "rgba(52,211,153,0.12)", border: "1px solid rgba(52,211,153,0.30)", color: "#34d399", fontSize: "13px", fontWeight: "500" }}>
-          ✓ Contact enregistré avec succès.
+          â Contact enregistrÃ© avec succÃ¨s.
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="liquid-glass p-10 rounded-[40px] border border-white/10 space-y-10">
+      <form onSubmit={handleSubmit} className="liquid-glass p-5 rounded-[40px] border border-white/10 space-y-4">
 
-        {/* ① IDENTITÉ & RÔLE */}
+        {/* â  IDENTITÃ & RÃLE */}
         <div>
-          <p style={sectionHead}>① Identité & Rôle</p>
+          <p style={sectionHead}>â  IdentitÃ© & RÃ´le</p>
 
-          <div className="mb-6">
-            <label style={labelStyle}>Rôle dans la transaction</label>
+          <div className="mb-2">
+            <label style={labelStyle}>RÃ´le dans la transaction</label>
             <div className="flex flex-wrap gap-3">
               {[
-                { value: "acquereur", label: "Acquéreur", sub: "En recherche",    icon: "🔍", color: "#C4A882" },
-                { value: "vendeur",   label: "Vendeur",   sub: "Mandat de vente", icon: "🏠", color: "#34d399" },
+                { value: "acquereur", label: "AcquÃ©reur", sub: "En recherche",    icon: "ð", color: "#C4A882" },
+                { value: "vendeur",   label: "Vendeur",   sub: "Mandat de vente", icon: "ð ", color: "#34d399" },
               ].map(r => (
                 <button type="button" key={r.value}
                   onClick={() => setFormData(p => ({ ...p, type_client: r.value }))}
@@ -242,14 +242,14 @@ export default function NouveauClient() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-3">
             <div className="md:col-span-2">
               <label style={labelStyle}>Nom complet</label>
               <input required type="text" style={inputStyle} value={formData.nom}
-                onFocus={focus} onBlur={blur} onChange={set("nom")} placeholder="Prénom Nom" />
+                onFocus={focus} onBlur={blur} onChange={set("nom")} placeholder="PrÃ©nom Nom" />
             </div>
             <div>
-              <label style={labelStyle}>Catégorie</label>
+              <label style={labelStyle}>CatÃ©gorie</label>
               <select style={inputStyle} value={formData.categorie_client} onFocus={focus} onBlur={blur} onChange={set("categorie_client")}>
                 <option value="standard"   className="bg-slate-900">Standard</option>
                 <option value="prestige"   className="bg-slate-900">Prestige</option>
@@ -258,9 +258,9 @@ export default function NouveauClient() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6 mt-6">
+          <div className="grid md:grid-cols-2 gap-3 mt-2">
             <div>
-              <label style={labelStyle}>Téléphone</label>
+              <label style={labelStyle}>TÃ©lÃ©phone</label>
               <input type="tel" style={inputStyle} value={formData.telephone} onFocus={focus} onBlur={blur} onChange={set("telephone")} />
             </div>
             <div>
@@ -270,13 +270,13 @@ export default function NouveauClient() {
           </div>
         </div>
 
-        {/* ② PRIX · TYPE · LOCALISATION */}
+        {/* â¡ PRIX Â· TYPE Â· LOCALISATION */}
         <div>
-          <p style={sectionHead}>② Prix · Type · Localisation</p>
+          <p style={sectionHead}>â¡ Prix Â· Type Â· Localisation</p>
 
-          <div className="mb-8">
+          <div className="mb-2">
             <label style={{ ...labelStyle, color: roleColor }}>
-              {formData.type_client === "vendeur" ? "Prix de vente (€)" : "Budget maximum (€)"}
+              {formData.type_client === "vendeur" ? "Prix de vente (â¬)" : "Budget maximum (â¬)"}
             </label>
             <div style={{ position: "relative" }}>
               <input type="number"
@@ -289,13 +289,13 @@ export default function NouveauClient() {
               />
               {formData.budget && (
                 <span style={{ position: "absolute", right: "20px", top: "50%", transform: "translateY(-50%)", fontSize: "13px", color: roleColor, fontWeight: "600", opacity: 0.8 }}>
-                  {Number(formData.budget).toLocaleString()} €
+                  {Number(formData.budget).toLocaleString()} â¬
                 </span>
               )}
             </div>
           </div>
 
-          <div className="mb-8">
+          <div className="mb-2">
             <label style={labelStyle}>Type de bien</label>
             <div className="flex flex-wrap gap-3">
               {TYPES_BIEN.map(({ icon, label }) => (
@@ -316,13 +316,13 @@ export default function NouveauClient() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-2 gap-3">
             <div>
               <label style={labelStyle}>Commune</label>
               <select style={{ ...inputStyle, fontSize: "15px" }} value={formData.secteur} onFocus={focus} onBlur={blur} onChange={set("secteur")}>
-                <option value="" className="bg-slate-900">Sélectionner...</option>
+                <option value="" className="bg-slate-900">SÃ©lectionner...</option>
                 {SECTEURS.map(g => (
-                  <optgroup key={g.groupe} label={`── ${g.groupe}`}>
+                  <optgroup key={g.groupe} label={`ââ ${g.groupe}`}>
                     {g.list.map(s => <option key={s} value={s} className="bg-slate-900">{s}</option>)}
                   </optgroup>
                 ))}
@@ -331,21 +331,21 @@ export default function NouveauClient() {
             <div>
               <label style={labelStyle}>Projet</label>
               <select style={inputStyle} value={formData.projet_client} onFocus={focus} onBlur={blur} onChange={set("projet_client")}>
-                <option value="résidence principale"   className="bg-slate-900">Résidence principale</option>
-                <option value="résidence secondaire"   className="bg-slate-900">Résidence secondaire</option>
+                <option value="rÃ©sidence principale"   className="bg-slate-900">RÃ©sidence principale</option>
+                <option value="rÃ©sidence secondaire"   className="bg-slate-900">RÃ©sidence secondaire</option>
                 <option value="investissement locatif" className="bg-slate-900">Investissement locatif</option>
-                <option value="location saisonnière"   className="bg-slate-900">Location saisonnière</option>
-                <option value="défiscalisation"        className="bg-slate-900">Défiscalisation</option>
+                <option value="location saisonniÃ¨re"   className="bg-slate-900">Location saisonniÃ¨re</option>
+                <option value="dÃ©fiscalisation"        className="bg-slate-900">DÃ©fiscalisation</option>
               </select>
             </div>
           </div>
         </div>
 
-        {/* ③ RAFFINEMENTS */}
+        {/* â¢ RAFFINEMENTS */}
         <div>
-          <p style={sectionHead}>③ Raffinements</p>
+          <p style={sectionHead}>â¢ Raffinements</p>
 
-          <div className="mb-6">
+          <div className="mb-2">
             <label style={labelStyle}>Nombre de chambres</label>
             <div className="flex flex-wrap gap-2">
               {CHAMBRES.map(c => (
@@ -363,20 +363,20 @@ export default function NouveauClient() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6 mb-6">
+          <div className="grid md:grid-cols-2 gap-3 mb-2">
             <div>
-              <label style={labelStyle}>Surface habitable (m²)</label>
+              <label style={labelStyle}>Surface habitable (mÂ²)</label>
               <input type="number" style={inputStyle} placeholder="Ex : 120"
                 value={formData.surface_habitable} onFocus={focus} onBlur={blur} onChange={set("surface_habitable")} />
             </div>
             <div>
-              <label style={labelStyle}>Surface terrain (m²)</label>
+              <label style={labelStyle}>Surface terrain (mÂ²)</label>
               <input type="number" style={inputStyle} placeholder="Ex : 800"
                 value={formData.surface_terrain} onFocus={focus} onBlur={blur} onChange={set("surface_terrain")} />
             </div>
           </div>
 
-          <div className="mb-6">
+          <div className="mb-2">
             <label style={labelStyle}>Zone / Altitude</label>
             <div className="flex flex-wrap gap-2">
               {ALTITUDE.map(a => (
@@ -398,7 +398,7 @@ export default function NouveauClient() {
           </div>
 
           <div>
-            <label style={labelStyle}>Prestations & Critères</label>
+            <label style={labelStyle}>Prestations & CritÃ¨res</label>
             <div className="flex flex-wrap gap-2">
               {CRITERES_BOOL.map(({ key, label, icon }) => (
                 <button type="button" key={key} onClick={() => toggle(key)}
@@ -417,9 +417,9 @@ export default function NouveauClient() {
           </div>
         </div>
 
-        {/* ④ NOTES & SCANNER */}
+        {/* â£ NOTES & SCANNER */}
         <div>
-          <p style={sectionHead}>④ Notes & Scanner</p>
+          <p style={sectionHead}>â£ Notes & Scanner</p>
           <div className="flex justify-between items-center mb-3">
             <label style={{ ...labelStyle, marginBottom: 0 }}>Notes (WhatsApp / Keep / terrain)</label>
             <button type="button" onClick={handleScanNotes} disabled={!formData.notes || scanning}
@@ -433,7 +433,7 @@ export default function NouveauClient() {
                 opacity: formData.notes ? 1 : 0.4,
               }}
             >
-              {scanning ? "⟳ Analyse..." : "✦ Scanner la note"}
+              {scanning ? "â³ Analyse..." : "â¦ Scanner la note"}
             </button>
           </div>
           <textarea rows="4"
@@ -444,7 +444,7 @@ export default function NouveauClient() {
             onChange={set("notes")}
           />
           {scanResult && (
-            <p style={{ marginTop: "8px", fontSize: "12px", fontStyle: "italic", color: scanResult.startsWith("✓") ? "#34d399" : "rgba(255,255,255,0.45)" }}>
+            <p style={{ marginTop: "8px", fontSize: "12px", fontStyle: "italic", color: scanResult.startsWith("â") ? "#34d399" : "rgba(255,255,255,0.45)" }}>
               {scanResult}
             </p>
           )}
@@ -452,11 +452,11 @@ export default function NouveauClient() {
 
         {/* Table cible visible */}
         <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", textAlign: "center", letterSpacing: "0.1em" }}>
-          → Enregistrement dans : <span style={{ color: "#C4A882" }}>{getTable(formData.type_client, formData.categorie_client)}</span>
+          â Enregistrement dans : <span style={{ color: "#C4A882" }}>{getTable(formData.type_client, formData.categorie_client)}</span>
         </p>
 
         <button type="submit" disabled={loading}
-          className="w-full py-5 rounded-full bg-white text-black font-bold uppercase tracking-[0.2em] text-xs hover:bg-[#C4A882] hover:text-white transition-all disabled:opacity-50">
+          className="w-full py-2 rounded-full bg-white text-black font-bold uppercase tracking-[0.2em] text-xs hover:bg-[#C4A882] hover:text-white transition-all disabled:opacity-50">
           {loading ? "Enregistrement en cours..." : "Enregistrer le dossier"}
         </button>
 
