@@ -99,12 +99,15 @@ export default function Vendeurs() {
   async function handleSave(e) {
     e.preventDefault()
     setSaving(true)
-    const { id, nom, telephone, email, categorie_client, budget, secteur, notes, nb_chambres, surface_habitable, surface_terrain, type_bien, altitude, projet_client } = editClient
+    const { id, nom, telephone, email, categorie_client, budget, prix_vente, secteur, notes, nb_chambres, surface_habitable, surface_terrain, type_bien, altitude, projet_client, apporteur_affaires } = editClient
+    // prix_vente = champ dédié vendeur ; budget = fallback legacy
+    const prixNum = Number(prix_vente) || Number(budget) || null
+    const payload = { nom, telephone, email, categorie_client, prix_vente: prixNum, budget: prixNum, secteur, notes, nb_chambres, surface_habitable: Number(surface_habitable)||null, surface_terrain: Number(surface_terrain)||null, type_bien, altitude, projet_client, apporteur_affaires: apporteur_affaires || null }
     let error
     if (id) {
-      ({ error } = await supabase.from("vendeurs").update({ nom, telephone, email, categorie_client, budget: Number(budget)||null, secteur, notes, nb_chambres, surface_habitable: Number(surface_habitable)||null, surface_terrain: Number(surface_terrain)||null, type_bien, altitude, projet_client }).eq("id", id))
+      ({ error } = await supabase.from("vendeurs").update(payload).eq("id", id))
     } else {
-      ({ error } = await supabase.from("vendeurs").insert([{ nom, telephone, email, categorie_client, budget: Number(budget)||null, secteur, notes, nb_chambres, surface_habitable: Number(surface_habitable)||null, surface_terrain: Number(surface_terrain)||null, type_bien, altitude, projet_client, statut: "prospect" }]))
+      ({ error } = await supabase.from("vendeurs").insert([{ ...payload, statut: "prospect" }]))
     }
     if (error) { alert("Erreur : " + error.message) }
     else { await fetchClients(); closeEdit() }
@@ -202,7 +205,7 @@ export default function Vendeurs() {
               </div>
 
               <div style={prixBox} className="lg:text-right">
-                <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "1.8rem", fontWeight: "400", color: "#34d399", lineHeight: 1 }}>{client.budget?.toLocaleString()} €</p>
+                <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "1.8rem", fontWeight: "400", color: "#34d399", lineHeight: 1 }}>{(client.prix_vente || client.budget)?.toLocaleString()} €</p>
                 <p style={{ fontSize: "10px", color: "rgba(255,255,255,0.70)", letterSpacing: "0.18em", textTransform: "uppercase", marginTop: "6px" }}>{client.secteur || "Secteur à définir"}</p>
                 <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", marginTop: "10px", paddingTop: "10px", fontSize: "12px", color: "rgba(255,255,255,0.70)" }}>
                   {client.type_bien || "Type non spécifié"}
@@ -214,6 +217,9 @@ export default function Vendeurs() {
                     {client.surface_habitable && client.surface_terrain && " · "}
                     {client.surface_terrain && `${client.surface_terrain}m² terrain`}
                   </div>
+                )}
+                {client.apporteur_affaires && (
+                  <div style={{ marginTop: "6px", fontSize: "11px", color: "#D4AF37" }}>👤 {client.apporteur_affaires}</div>
                 )}
               </div>
             </div>
@@ -288,8 +294,21 @@ export default function Vendeurs() {
                 <div><label style={modalLabelStyle}>Email</label><input type="email" style={modalInputStyle} value={editClient.email||""} onFocus={focus} onBlur={blur} onChange={(e) => setEditClient({...editClient, email: e.target.value})} /></div>
               </div>
               <div className="grid md:grid-cols-2 gap-6">
-                <div><label style={modalLabelStyle}>Prix de vente (€)</label><input type="number" style={modalInputStyle} value={editClient.budget||""} onFocus={focus} onBlur={blur} onChange={(e) => setEditClient({...editClient, budget: e.target.value})} /></div>
+                <div><label style={modalLabelStyle}>Prix de vente (€)</label><input type="number" style={modalInputStyle} value={editClient.prix_vente||editClient.budget||""} onFocus={focus} onBlur={blur} onChange={(e) => setEditClient({...editClient, prix_vente: e.target.value, budget: e.target.value})} /></div>
                 <div><label style={modalLabelStyle}>Secteur / Ville</label><input type="text" style={modalInputStyle} value={editClient.secteur||""} onFocus={focus} onBlur={blur} onChange={(e) => setEditClient({...editClient, secteur: e.target.value})} /></div>
+              </div>
+              <div className="grid md:grid-cols-2 gap-6">
+                <div><label style={modalLabelStyle}>Membre Alchemistria (apporteur)</label>
+                  <select style={modalInputStyle} value={editClient.apporteur_affaires||""} onFocus={focus} onBlur={blur} onChange={(e) => setEditClient({...editClient, apporteur_affaires: e.target.value})}>
+                    <option value="" className="bg-slate-900">— Choisir —</option>
+                    <option value="Jeff" className="bg-slate-900">Jeff</option>
+                    <option value="Katia" className="bg-slate-900">Katia</option>
+                    <option value="Alfred" className="bg-slate-900">Alfred</option>
+                    <option value="Philippe" className="bg-slate-900">Philippe</option>
+                    <option value="Michelle" className="bg-slate-900">Michelle</option>
+                    <option value="Sébastien" className="bg-slate-900">Sébastien</option>
+                  </select>
+                </div>
               </div>
               <div className="grid md:grid-cols-3 gap-6">
                 <div><label style={modalLabelStyle}>Type de bien</label><input type="text" style={modalInputStyle} placeholder="Villa, T3..." value={editClient.type_bien||""} onFocus={focus} onBlur={blur} onChange={(e) => setEditClient({...editClient, type_bien: e.target.value})} /></div>

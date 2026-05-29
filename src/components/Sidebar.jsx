@@ -53,6 +53,9 @@ export default function Sidebar() {
           <p className="text-white/50 mt-3 text-[10px] font-medium tracking-[0.20em] uppercase text-center">
             IAD Réunion · Off Market
           </p>
+          <span className="mt-2 text-[9px] font-bold tracking-widest uppercase border border-[#C87533]/50 text-[#C87533] px-3 py-1 rounded-full">
+            🔥 Alchemistria
+          </span>
         </div>
 
         {/* Espacement mobile */}
@@ -86,6 +89,7 @@ export default function Sidebar() {
         <div className="mt-auto pt-6 border-t border-white/10 hidden lg:block">
           <p className="text-[10px] text-white/40 tracking-wide">ImmoMatch CRM v2</p>
           <p className="text-[10px] text-white/30 mt-0.5">Matching intelligent immobilier</p>
+          <p className="text-[10px] text-[#C87533]/60 mt-1">🔥 Collectif Alchemistria · CONFIDENTIEL</p>
         </div>
       </aside>
 

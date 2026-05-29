@@ -101,10 +101,10 @@ export default function Acquereurs() {
   async function handleSave(e) {
     e.preventDefault()
     setSaving(true)
-    const { id, nom, telephone, email, categorie_client, budget, secteur, notes, nb_chambres, surface_habitable, surface_terrain, type_bien, altitude, projet_client } = editClient
+    const { id, nom, telephone, email, categorie_client, budget, secteur, notes, nb_chambres, surface_habitable, surface_terrain, type_bien, altitude, projet_client, apporteur_affaires } = editClient
     const { error } = await supabase
       .from("acquereurs")
-      .update({ nom, telephone, email, categorie_client, budget: Number(budget) || null, secteur, notes, nb_chambres, surface_habitable: Number(surface_habitable) || null, surface_terrain: Number(surface_terrain) || null, type_bien, altitude, projet_client })
+      .update({ nom, telephone, email, categorie_client, budget: Number(budget) || null, secteur, notes, nb_chambres, surface_habitable: Number(surface_habitable) || null, surface_terrain: Number(surface_terrain) || null, type_bien, altitude, projet_client, apporteur_affaires: apporteur_affaires || null })
       .eq("id", id)
     if (error) { alert("Erreur : " + error.message) }
     else { setClients(prev => prev.map(c => c.id === id ? { ...c, ...editClient } : c)); closeEdit() }
@@ -196,6 +196,8 @@ export default function Acquereurs() {
                 <div className="flex flex-wrap gap-x-6 gap-y-1" style={{ fontSize: "13px", color: "rgba(255,255,255,0.80)" }}>
                   <span><span style={{ color: "rgba(255,255,255,0.70)", fontSize: "10px", fontWeight: "700", letterSpacing: "0.12em", marginRight: "6px" }}>TÉL</span>{client.telephone || "Non renseigné"}</span>
                   <span><span style={{ color: "rgba(255,255,255,0.70)", fontSize: "10px", fontWeight: "700", letterSpacing: "0.12em", marginRight: "6px" }}>MAIL</span>{client.email || "Non renseigné"}</span>
+                  {client.apporteur_affaires && <span style={{ color: "#D4AF37", fontSize: "11px" }}>👤 {client.apporteur_affaires}</span>}
+                  {client.notes && client.notes.includes("🔴") && <span style={{ color: "#f87171", fontSize: "11px", fontWeight: "700" }}>🔴 URGENT</span>}
                 </div>
               </div>
 
