@@ -1,106 +1,103 @@
-export function calculerScore(a, v) {
+import { supabase } from '../supabase'
 
-  let score = 0
-
-  const budgetA = parseInt(a.budget)
-  const prixV = parseInt(v.prix)
-
-  if (!isNaN(budgetA) && !isNaN(prixV)) {
-
-    const difference = Math.abs(budgetA - prixV)
-
-    if (difference <= 50000) {
-      score += 25
-    }
-    else if (difference <= 100000) {
-      score += 15
-    }
-  }
-
-  if (a.secteur === v.secteur) {
-    score += 20
-  }
-
-  if (a.type_recherche === v.type_bien) {
-    score += 20
-  }
-
-  if (a.altitude_max === v.altitude) {
-    score += 10
-  }
-
-  if (a.vue_mer && v.vue_mer) {
-    score += 5
-  }
-
-  if (a.prestige && v.prestige) {
-    score += 10
-  }
-
-  if (
-    a.nb_chambres &&
-    v.nb_chambres &&
-    parseInt(a.nb_chambres) === parseInt(v.nb_chambres)
-  ) {
-    score += 10
-  }
-
-  return Math.min(score, 100)
+// ─── Scoring weights ───────────────────────────────────────────────────────
+const W = {
+  TYPE_BIEN:  35,   // type de bien identique
+  SECTEUR:    30,   // même secteur géographique
+  BUDGET:     25,   // budget compatible avec prix
+  CRITERES:   10,   // critères optionnels (vue mer, piscine, etc.)
 }
 
-export function genererAnalyse(match) {
-
-  const points = []
-
-  if (
-    match.acquereur.secteur ===
-    match.vendeur.secteur
-  ) {
-    points.push("secteur compatible")
-  }
-
-  if (
-    match.acquereur.type_recherche ===
-    match.vendeur.type_bien
-  ) {
-    points.push("type de bien correspondant")
-  }
-
-  if (
-    match.acquereur.vue_mer &&
-    match.vendeur.vue_mer
-  ) {
-    points.push("vue mer validée")
-  }
-
-  return points.join(" • ")
+// Score budget : 100% si budget >= prix, dégressif sinon
+function scoreBudget(budget, prix) {
+  if (!prix || prix === 0) return 50          // prix inconnu → neutre
+  if (budget >= prix) return 100
+  const ratio = budget / prix
+  if (ratio >= 0.90) return 80               // écart < 10%
+  if (ratio >= 0.80) return 50               // écart 10-20%
+  if (ratio >= 0.70) return 20               // écart 20-30%
+  return 0
 }
 
-export function getBadge(score) {
-
-  if (score >= 90) {
-    return {
-      label: "🔥 Très proche",
-      color: "text-red-400"
+// Score critères optionnels (vue_mer, piscine, garage, etc.)
+function scoreCriteres(vendeur, acquereur) {
+  const crits = ['vue_mer', 'vue_montagne', 'piscine', 'garage', 'dependance', 'plain_pied']
+  let matched = 0, total = 0
+  for (const c of crits) {
+    if (acquereur[c] === true) {
+      total++
+      if (vendeur[c] === true) matched++
     }
   }
+  return total === 0 ? 50 : Math.round((matched / total) * 100)
+}
 
-  if (score >= 75) {
-    return {
-      label: "⭐ Excellent match",
-      color: "text-yellow-400"
-    }
-  }
+// Calcul du score global pondéré
+export function computeScore(vendeur, acquereur) {
+  const typeMatch   = vendeur.type_bien && acquereur.type_bien &&
+                      vendeur.type_bien.toLowerCase() === acquereur.type_bien.toLowerCase()
+  const secteurMatch = vendeur.secteur && acquereur.secteur &&
+                       vendeur.secteur.toLowerCase() === acquereur.secteur.toLowerCase()
 
-  if (score >= 50) {
-    return {
-      label: "👍 Compatible",
-      color: "text-green-400"
-    }
-  }
+  const sType    = typeMatch    ? 100 : 0
+  const sSecteur = secteurMatch ? 100 : 0
+  const sBudget  = scoreBudget(Number(acquereur.budget) || 0, Number(vendeur.prix_vente) || 0)
+  const sCriteres = scoreCriteres(vendeur, acquereur)
+
+  const total = Math.round(
+    (sType    * W.TYPE_BIEN  +
+     sSecteur * W.SECTEUR    +
+     sBudget  * W.BUDGET     +
+     sCriteres * W.CRITERES) / 100
+  )
 
   return {
-    label: "📌 Partiel",
-    color: "text-white/50"
+    total,
+    detail: { type: sType, secteur: sSecteur, budget: sBudget, criteres: sCriteres },
+    matched: { type: typeMatch, secteur: secteurMatch }
   }
+}
+
+// Priorité texte selon score
+function priorite(score) {
+  if (score >= 80) return 'haute'
+  if (score >= 55) return 'moyenne'
+  return 'basse'
+}
+
+// Lance le matching complet et sauvegarde en base
+export async function lancerMatching() {
+  const [{ data: vendeurs }, { data: acquereurs }] = await Promise.all([
+    supabase.from('vendeurs').select('*').neq('type_bien', ''),
+    supabase.from('acquereurs').select('*').neq('type_bien', ''),
+  ])
+  if (!vendeurs || !acquereurs) return { count: 0, error: 'Données manquantes' }
+
+  const matches = []
+  for (const v of vendeurs) {
+    for (const a of acquereurs) {
+      const score = computeScore(v, a)
+      if (score.total >= 40) {
+        matches.push({
+          vendeur_id:   v.id,
+          acquereur_id: a.id,
+          score:        score.total,
+          priorite:     priorite(score.total),
+          analyse_ia:   JSON.stringify(score.detail),
+        })
+      }
+    }
+  }
+
+  // Sort and keep top 100
+  matches.sort((a, b) => b.score - a.score)
+  const top = matches.slice(0, 100)
+
+  // Replace all matches
+  await supabase.from('matches').delete().neq('id', 0)
+  if (top.length > 0) {
+    await supabase.from('matches').insert(top)
+  }
+
+  return { count: top.length, error: null }
 }
