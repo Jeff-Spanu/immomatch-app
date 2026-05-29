@@ -16,11 +16,11 @@ import DashboardClients from "./pages/DashboardClients"
 export default function App() {
   return (
     <div
-      className="min-h-screen text-white flex relative overflow-x-hidden bg-charcoal"
+      className="h-screen text-white flex relative overflow-x-hidden bg-charcoal"
       style={{ fontFamily: "'DM Sans', sans-serif" }}
     >
 
-      {/* ─── FOND DESKTOP : fixed = identique sur TOUTES les pages ─── */}
+      {/* âââ FOND DESKTOP : fixed = identique sur TOUTES les pages âââ */}
       <div className="fixed inset-0 z-0 pointer-events-none hidden lg:block">
         <img
           src="/immomatch-bg.png"
@@ -32,11 +32,11 @@ export default function App() {
         <div className="absolute top-[-150px] left-[-150px] w-[500px] h-[500px] bg-wood/10 blur-3xl rounded-full" />
       </div>
 
-      {/* ─── FOND MOBILE / TABLETTE ─── */}
+      {/* âââ FOND MOBILE / TABLETTE âââ */}
       <div className="fixed inset-0 z-0 bg-[#1C1917] lg:hidden" />
 
-      {/* ─── INTERFACE ─── */}
-      <div className="relative z-10 flex flex-col md:flex-row w-full min-h-screen">
+      {/* âââ INTERFACE âââ */}
+      <div className="relative z-10 flex flex-col md:flex-row w-full h-full overflow-hidden">
         <Sidebar />
 
         <main className="flex-1 p-4 md:p-10 overflow-y-auto overflow-x-hidden w-full">
