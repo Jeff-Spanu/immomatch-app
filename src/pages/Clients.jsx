@@ -167,9 +167,9 @@ export default function Clients() {
             <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)" }}>
               <th className="px-5 py-3 text-[11px] uppercase tracking-widest text-white/75 font-bold">Contact</th>
               <th className="px-5 py-3 text-[11px] uppercase tracking-widest text-white/75 font-bold">Type</th>
-              <th className="px-5 py-3 text-[11px] uppercase tracking-widest text-white/75 font-bold">Catégorie</th>
+              <th className="px-5 py-3 text-[11px] uppercase tracking-widest text-white/75 font-bold">Bien / Recherche</th>
               <th className="px-5 py-3 text-[11px] uppercase tracking-widest text-white/75 font-bold">Localisation</th>
-              <th className="px-5 py-3 text-[11px] uppercase tracking-widest text-white/75 font-bold">Budget / Prix</th>
+              <th className="px-5 py-3 text-[11px] uppercase tracking-widest text-white/75 font-bold">Budget / Prix vente</th>
               <th className="px-5 py-3 text-right text-[11px] uppercase tracking-widest text-white/75 font-bold">Action</th>
             </tr>
           </thead>
@@ -190,12 +190,15 @@ export default function Clients() {
                       {tl.label}
                     </span>
                   </td>
-                  <td className={`px-5 py-2.5 text-[11px] font-bold uppercase tracking-wide ${getCategoryColor(client.categorie_client)}`}>
-                    {client.categorie_client || "—"}
+                  <td className={`px-5 py-2.5 text-[11px] font-semibold text-white/70`}>
+                    {client.type_bien || <span className="text-white/30 italic">—</span>}
                   </td>
                   <td className="px-5 py-2.5 text-sm text-white/85">{client.secteur || "—"}</td>
                   <td className="px-5 py-2.5 text-sm font-medium text-white/90">
-                    {client.budget ? `${Number(client.budget).toLocaleString()} €` : "—"}
+                    {(() => {
+                      const val = client.prix_vente || client.budget
+                      return val ? `${Number(val).toLocaleString('fr-FR')} €` : '—'
+                    })()}
                   </td>
                   <td className="px-5 py-2.5 text-right">
                     <button onClick={() => openEdit(client)}

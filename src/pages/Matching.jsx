@@ -52,9 +52,9 @@ function MatchCard({ match }) {
         </div>
         <div className="flex flex-col items-center gap-1">
           <div className="w-7 h-7 rounded-full bg-[#C87533]/20 border border-[#C87533]/40 flex items-center justify-center text-[#C87533] text-sm">💛</div>
-          <div className="flex gap-0.5 flex-wrap justify-center">
-            {match.matched?.type    && <span className="text-[9px] bg-white/10 rounded-full px-1.5 py-0.5 text-white/70">TYPE</span>}
-            {match.matched?.secteur && <span className="text-[9px] bg-white/10 rounded-full px-1.5 py-0.5 text-white/70">SECT.</span>}
+          <div className="flex gap-1 flex-wrap justify-center">
+            {match.matched?.type    && <span className="text-[10px] bg-white/15 rounded-full px-2 py-0.5 text-white/90 font-medium">TYPE ✓</span>}
+            {match.matched?.secteur && <span className="text-[10px] bg-white/15 rounded-full px-2 py-0.5 text-white/90 font-medium">SECTEUR ✓</span>}
           </div>
         </div>
         <div className="text-right">
