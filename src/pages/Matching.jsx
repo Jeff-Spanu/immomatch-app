@@ -33,36 +33,36 @@ function MatchCard({ match }) {
   return (
     <div className={`${p.bg} ${p.border} border rounded-[20px] p-4 transition-all hover:scale-[1.005]`}>
       <div className="flex items-center justify-between mb-3">
-        <span className={`text-[9px] font-bold uppercase tracking-widest ${p.text}`}>{p.label}</span>
+        <span className={`text-[10px] font-bold uppercase tracking-widest ${p.text}`}>{p.label}</span>
         <div className="flex items-center gap-2">
-          <span className="text-xl font-light text-white">{score}%</span>
-          <button onClick={() => setOpen(!open)} className="text-white/30 hover:text-white/70 text-xs transition-colors">
+          <span className="text-2xl font-light text-white">{score}%</span>
+          <button onClick={() => setOpen(!open)} className="text-white/30 hover:text-white/70 text-sm transition-colors">
             {open ? '▲' : '▼'}
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-[1fr_auto_1fr] gap-2 items-center mb-3">
+      <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-center mb-3">
         <div>
-          <p className="text-[8px] text-[#C87533] uppercase tracking-widest mb-0.5">ACQUÉREUR</p>
-          <p className="text-white font-medium text-xs leading-tight">{a.nom || '—'}</p>
-          <p className="text-white/50 text-[10px]">{a.budget > 0 ? Number(a.budget).toLocaleString('fr-FR') + ' €' : '—'} · {a.secteur || '—'}</p>
-          {a.telephone && <p className="text-white/40 text-[9px] mt-0.5">📞 {a.telephone}</p>}
-          {a.apporteur_affaires && <p className="text-[#D4AF37]/70 text-[9px]">👤 {a.apporteur_affaires}</p>}
+          <p className="text-[10px] text-[#C87533] uppercase tracking-widest mb-1">ACQUÉREUR</p>
+          <p className="text-white font-semibold text-sm leading-tight">{a.nom || '—'}</p>
+          <p className="text-white/60 text-xs mt-0.5">{a.budget > 0 ? Number(a.budget).toLocaleString('fr-FR') + ' €' : '—'} · {a.secteur || '—'}</p>
+          {a.telephone && <p className="text-white/50 text-[11px] mt-1">📞 {a.telephone}</p>}
+          {a.apporteur_affaires && <p className="text-[#D4AF37]/80 text-[11px]">👤 {a.apporteur_affaires}</p>}
         </div>
         <div className="flex flex-col items-center gap-1">
-          <div className="w-6 h-6 rounded-full bg-[#C87533]/20 border border-[#C87533]/40 flex items-center justify-center text-[#C87533] text-xs">💛</div>
-          <div className="flex gap-0.5">
-            {match.matched?.type    && <span className="text-[7px] bg-white/10 rounded-full px-1 py-0.5 text-white/60">TYPE</span>}
-            {match.matched?.secteur && <span className="text-[7px] bg-white/10 rounded-full px-1 py-0.5 text-white/60">SECT.</span>}
+          <div className="w-7 h-7 rounded-full bg-[#C87533]/20 border border-[#C87533]/40 flex items-center justify-center text-[#C87533] text-sm">💛</div>
+          <div className="flex gap-0.5 flex-wrap justify-center">
+            {match.matched?.type    && <span className="text-[9px] bg-white/10 rounded-full px-1.5 py-0.5 text-white/70">TYPE</span>}
+            {match.matched?.secteur && <span className="text-[9px] bg-white/10 rounded-full px-1.5 py-0.5 text-white/70">SECT.</span>}
           </div>
         </div>
         <div className="text-right">
-          <p className="text-[8px] text-green-400 uppercase tracking-widest mb-0.5">VENDEUR</p>
-          <p className="text-white font-medium text-xs leading-tight">{v.nom || '—'}</p>
-          <p className="text-white/50 text-[10px]">{(v.prix_vente || v.budget) > 0 ? Number(v.prix_vente || v.budget).toLocaleString('fr-FR') + ' €' : '—'} · {v.secteur || '—'}</p>
-          {v.telephone && <p className="text-white/40 text-[9px] mt-0.5">📞 {v.telephone}</p>}
-          {v.apporteur_affaires && <p className="text-[#D4AF37]/70 text-[9px]">👤 {v.apporteur_affaires}</p>}
+          <p className="text-[10px] text-green-400 uppercase tracking-widest mb-1">VENDEUR</p>
+          <p className="text-white font-semibold text-sm leading-tight">{v.nom || '—'}</p>
+          <p className="text-white/60 text-xs mt-0.5">{(v.prix_vente || v.budget) > 0 ? Number(v.prix_vente || v.budget).toLocaleString('fr-FR') + ' €' : '—'} · {v.secteur || '—'}</p>
+          {v.telephone && <p className="text-white/50 text-[11px] mt-1">📞 {v.telephone}</p>}
+          {v.apporteur_affaires && <p className="text-[#D4AF37]/80 text-[11px]">👤 {v.apporteur_affaires}</p>}
         </div>
       </div>
 
@@ -77,7 +77,7 @@ function MatchCard({ match }) {
 
       <button
         onClick={() => window.open(`tel:${a.telephone}`)}
-        className="mt-2 w-full py-1.5 rounded-full border border-white/20 text-white/70 text-[9px] uppercase tracking-widest hover:bg-white/10 transition-all"
+        className="mt-3 w-full py-2 rounded-full border border-white/20 text-white/80 text-xs uppercase tracking-widest hover:bg-white/10 transition-all font-medium"
       >
         Organiser la visite
       </button>
