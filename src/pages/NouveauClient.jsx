@@ -1,43 +1,45 @@
 import { useState } from "react"
 import { supabase } from "../supabase"
 
-// âââ DonnÃ©es La RÃ©union âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Données La Réunion ──────────────────────────────────────────────────────
 const SECTEURS = [
   { groupe: "Nord",  list: ["Saint-Denis", "Sainte-Marie", "Sainte-Suzanne"] },
-  { groupe: "Est",   list: ["Saint-AndrÃ©", "Bras-Panon", "Saint-BenoÃ®t", "Sainte-Rose"] },
-  { groupe: "Sud",   list: ["Saint-Pierre", "Saint-Joseph", "Petite-Ãle", "Le Tampon", "Entre-Deux", "Saint-Louis", "Ãtang-SalÃ©", "Saint-Philippe"] },
+  { groupe: "Est",   list: ["Saint-André", "Bras-Panon", "Saint-Benoît", "Sainte-Rose"] },
+  { groupe: "Sud",   list: ["Saint-Pierre", "Saint-Joseph", "Petite-Île", "Le Tampon", "Entre-Deux", "Saint-Louis", "Étang-Salé", "Saint-Philippe"] },
   { groupe: "Ouest", list: ["Saint-Paul", "Saint-Leu", "Trois-Bassins", "La Possession", "Le Port"] },
   { groupe: "Hauts", list: ["Cilaos", "Salazie", "Plaine-des-Palmistes", "La Montagne"] },
 ]
 
 const TYPES_BIEN = [
-  { label: "Villa",       icon: "ð¡" },
-  { label: "Maison",      icon: "ð " },
-  { label: "Appartement", icon: "ð¢" },
-  { label: "Studio",      icon: "ðï¸" },
-  { label: "Terrain",     icon: "ð¿" },
-  { label: "Immeuble",    icon: "ðï¸" },
+  { label: "Villa",       icon: "🏡" },
+  { label: "Maison",      icon: "🏠" },
+  { label: "Appartement", icon: "🏢" },
+  { label: "Studio",      icon: "🏗️" },
+  { label: "Terrain",     icon: "🌿" },
+  { label: "Immeuble",    icon: "🏛️" },
 ]
 
 const CHAMBRES = ["T1", "T2", "T3", "T4", "T5", "T6+"]
 
 const ALTITUDE = [
-  { label: "Littoral",  sub: "0â100m",    value: "0-100" },
-  { label: "Mi-pente",  sub: "100â800m",  value: "100-800" },
-  { label: "Hauteurs",  sub: "800â1200m", value: "800-1200" },
+  { label: "Littoral",  sub: "0–100m",    value: "0-100" },
+  { label: "Mi-pente",  sub: "100–800m",  value: "100-800" },
+  { label: "Hauteurs",  sub: "800–1200m", value: "800-1200" },
   { label: "Altitude",  sub: "1200m+",    value: "1200+" },
 ]
 
 const CRITERES_BOOL = [
-  { key: "piscine",      label: "Piscine",      icon: "ð" },
-  { key: "vue_mer",      label: "Vue Mer",      icon: "ð" },
-  { key: "vue_montagne", label: "Vue Montagne", icon: "â°ï¸" },
-  { key: "garage",       label: "Garage",       icon: "ð" },
-  { key: "dependance",   label: "DÃ©pendance",   icon: "ð¡" },
-  { key: "plain_pied",   label: "Plain-pied",   icon: "ð " },
+  { key: "piscine",      label: "Piscine",      icon: "🏊" },
+  { key: "vue_mer",      label: "Vue Mer",      icon: "🌊" },
+  { key: "vue_montagne", label: "Vue Montagne", icon: "⛰️" },
+  { key: "garage",       label: "Garage",       icon: "🚗" },
+  { key: "dependance",   label: "Dépendance",   icon: "🏡" },
+  { key: "plain_pied",   label: "Plain-pied",   icon: "🏠" },
 ]
 
-// âââ Scanner de notes âââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+const MEMBRES_ALCHEMISTRIA = ["Jeff", "Katia", "Alfred", "Philippe", "Michelle", "Sébastien"]
+
+// ─── Scanner de notes ────────────────────────────────────────────────────────
 function scanNotes(txt = "") {
   const n = txt.toLowerCase()
   const toutes = SECTEURS.flatMap(g => g.list)
@@ -59,405 +61,350 @@ function scanNotes(txt = "") {
     vue_mer:      n.includes("vue mer") || n.includes("bord de mer") || n.includes("face mer"),
     vue_montagne: n.includes("vue montagne") || n.includes("cirque") || n.includes("piton"),
     garage:       n.includes("garage") || n.includes("box") || n.includes("parking"),
-    dependance:   n.includes("dÃ©pendance") || n.includes("dependance") || n.includes("studio indÃ©p"),
+    dependance:   n.includes("dépendance") || n.includes("dependance") || n.includes("studio indép"),
     plain_pied:   n.includes("plain-pied") || n.includes("plain pied"),
     budget, nb_chambres, secteur,
   }
 }
 
-// âââ Routing vers la bonne table âââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Routing vers la bonne table ─────────────────────────────────────────────
 function getTable(type_client, categorie_client) {
-  if (type_client === "vendeur" && categorie_client === "prestige")   return "vendeurs_prestige"
+  if (type_client === "vendeur" && categorie_client === "prestige")    return "vendeurs_prestige"
   if (type_client === "acquereur" && categorie_client === "patrimoine") return "acquereurs_patrimoine"
   if (type_client === "vendeur")   return "vendeurs"
   return "acquereurs"
 }
 
-// âââ Styles âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Styles ──────────────────────────────────────────────────────────────────
 const inputStyle = {
   width: "100%",
   background: "rgba(255,255,255,0.05)",
   border: "1px solid rgba(255,255,255,0.12)",
-  borderRadius: "14px",
-  padding: "14px 20px",
-  outline: "none",
+  borderRadius: "12px",
+  padding: "12px 16px",
   color: "#fff",
   fontSize: "14px",
-  fontFamily: "'DM Sans', sans-serif",
-  transition: "border-color 0.2s",
+  outline: "none",
+  boxSizing: "border-box",
+  transition: "border-color .2s",
 }
 const labelStyle = {
-  fontSize: "11px",
-  fontWeight: "600",
-  letterSpacing: "0.18em",
-  textTransform: "uppercase",
-  color: "rgba(255,255,255,0.75)",
   display: "block",
-  marginBottom: "8px",
-  fontFamily: "'DM Sans', sans-serif",
-}
-const sectionHead = {
   fontSize: "10px",
-  color: "#C4A882",
-  letterSpacing: "0.22em",
-  textTransform: "uppercase",
   fontWeight: "700",
-  borderBottom: "1px solid rgba(196,168,130,0.18)",
-  paddingBottom: "10px",
-  marginBottom: "22px",
-  fontFamily: "'DM Sans', sans-serif",
-}
-const focus = (e) => e.target.style.borderColor = "#C4A882"
-const blur  = (e) => e.target.style.borderColor = "rgba(255,255,255,0.12)"
-
-const EMPTY_FORM = {
-  nom: "", telephone: "", email: "",
-  type_client: "acquereur",
-  categorie_client: "standard",
-  budget: "",
-  secteur: "",
-  altitude: "",
-  type_bien: "",
-  nb_chambres: "",
-  surface_habitable: "",
-  surface_terrain: "",
-  projet_client: "rÃ©sidence principale",
-  piscine: false, vue_mer: false, vue_montagne: false,
-  garage: false, dependance: false, plain_pied: false,
-  notes: "",
+  letterSpacing: "0.15em",
+  color: "rgba(255,255,255,0.50)",
+  marginBottom: "8px",
+  textTransform: "uppercase",
 }
 
+// ─── Composant principal ─────────────────────────────────────────────────────
 export default function NouveauClient() {
-  const [formData, setFormData]     = useState({ ...EMPTY_FORM })
-  const [loading, setLoading]       = useState(false)
-  const [success, setSuccess]       = useState(false)
-  const [scanning, setScanning]     = useState(false)
-  const [scanResult, setScanResult] = useState("")
+  const EMPTY = {
+    type_client: "acquereur", categorie_client: "standard",
+    nom: "", telephone: "", email: "",
+    budget: "", prix_vente: "", type_bien: "", secteur: "",
+    nb_chambres: "", surface_habitable: "", surface_terrain: "",
+    altitude: "", projet_client: "résidence principale",
+    notes: "", standing: "",
+    piscine: false, vue_mer: false, vue_montagne: false,
+    garage: false, dependance: false, plain_pied: false,
+    apporteur_affaires: "",
+  }
 
-  const set    = (key) => (e) => setFormData(p => ({ ...p, [key]: e.target.value }))
-  const pick   = (key, val) => setFormData(p => ({ ...p, [key]: p[key] === val ? "" : val }))
-  const toggle = (key) => setFormData(p => ({ ...p, [key]: !p[key] }))
+  const [form, setForm] = useState(EMPTY)
+  const [saving, setSaving] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [error, setError] = useState(null)
+  const [autoFill, setAutoFill] = useState(false)
 
-  const roleColor = formData.type_client === "vendeur" ? "#34d399" : "#C4A882"
+  function set(key, val) { setForm(f => ({ ...f, [key]: val })) }
 
-  function handleScanNotes() {
-    if (!formData.notes) return
-    setScanning(true)
-    setScanResult("")
-    const p = scanNotes(formData.notes)
-    const found = []
-    setFormData(prev => {
-      const next = { ...prev }
-      CRITERES_BOOL.forEach(({ key }) => {
-        if (p[key] && !prev[key]) { next[key] = true; found.push(key) }
-      })
-      if (p.budget     && !prev.budget)      { next.budget      = p.budget;      found.push(`${Number(p.budget).toLocaleString()} â¬`) }
-      if (p.nb_chambres && !prev.nb_chambres){ next.nb_chambres = p.nb_chambres; found.push(p.nb_chambres) }
-      if (p.secteur    && !prev.secteur)     { next.secteur     = p.secteur;     found.push(p.secteur) }
-      return next
-    })
-    setTimeout(() => {
-      setScanning(false)
-      setScanResult(found.length
-        ? `â Extrait : ${found.join(", ")}`
-        : "Aucun critÃ¨re supplÃ©mentaire dÃ©tectÃ©.")
-    }, 600)
+  function handleNotesChange(e) {
+    const txt = e.target.value
+    set("notes", txt)
+    if (txt.length > 20) {
+      const scan = scanNotes(txt)
+      setAutoFill(true)
+      setForm(f => ({
+        ...f,
+        notes: txt,
+        piscine:      f.piscine      || scan.piscine,
+        vue_mer:      f.vue_mer      || scan.vue_mer,
+        vue_montagne: f.vue_montagne || scan.vue_montagne,
+        garage:       f.garage       || scan.garage,
+        dependance:   f.dependance   || scan.dependance,
+        plain_pied:   f.plain_pied   || scan.plain_pied,
+        budget:       f.budget       || (scan.budget ? String(scan.budget) : f.budget),
+        nb_chambres:  f.nb_chambres  || scan.nb_chambres || f.nb_chambres,
+        secteur:      f.secteur      || scan.secteur || f.secteur,
+      }))
+    }
   }
 
   async function handleSubmit(e) {
     e.preventDefault()
-    setLoading(true)
+    if (!form.nom.trim()) { setError("Le nom est obligatoire."); return }
+    setSaving(true); setError(null)
 
-    const table = getTable(formData.type_client, formData.categorie_client)
+    const table = getTable(form.type_client, form.categorie_client)
+    const isVendeur = form.type_client === "vendeur"
+
     const payload = {
-      ...formData,
-      budget:            Number(formData.budget)            || null,
-      surface_habitable: Number(formData.surface_habitable) || null,
-      surface_terrain:   Number(formData.surface_terrain)   || null,
+      nom:               form.nom.trim(),
+      telephone:         form.telephone.trim(),
+      email:             form.email.trim(),
+      categorie_client:  form.categorie_client,
+      type_bien:         form.type_bien,
+      secteur:           form.secteur,
+      nb_chambres:       form.nb_chambres || null,
+      surface_habitable: form.surface_habitable ? Number(form.surface_habitable) : null,
+      surface_terrain:   form.surface_terrain   ? Number(form.surface_terrain)   : null,
+      altitude:          form.altitude || null,
+      projet_client:     form.projet_client,
+      notes:             form.notes,
+      statut:            "prospect",
+      piscine:           form.piscine,
+      vue_mer:           form.vue_mer,
+      vue_montagne:      form.vue_montagne,
+      garage:            form.garage,
+      dependance:        form.dependance,
+      plain_pied:        form.plain_pied,
+      apporteur_affaires: form.apporteur_affaires || null,
+      ...(isVendeur
+        ? { prix_vente: form.prix_vente ? Number(form.prix_vente) : null, budget: form.prix_vente ? Number(form.prix_vente) : null, standing: form.standing }
+        : { budget: form.budget ? Number(form.budget) : null }
+      ),
     }
-    // Retirer type_client du payload (implicite dans la table)
-    delete payload.type_client
 
-    const { error } = await supabase.from(table).insert([payload])
-
-    if (error) {
-      alert("Erreur : " + error.message)
-    } else {
-      setSuccess(true)
-      setFormData({ ...EMPTY_FORM })
-      setScanResult("")
-      setTimeout(() => setSuccess(false), 4000)
-    }
-    setLoading(false)
+    const { error: err } = await supabase.from(table).insert([payload])
+    setSaving(false)
+    if (err) { setError("Erreur : " + err.message); return }
+    setSuccess(true)
+    setTimeout(() => { setSuccess(false); setForm(EMPTY); setAutoFill(false) }, 2000)
   }
 
+  const isVendeur = form.type_client === "vendeur"
+
   return (
-    <div className="p-5 max-w-4xl mx-auto">
+    <div className="p-6 md:p-10 max-w-3xl mx-auto">
+      <p className="text-white/40 text-xs uppercase tracking-widest mb-1">CRM</p>
+      <h1 className="text-4xl font-serif text-white mb-6">Nouveau <span className="text-[#C87533]">Contact</span></h1>
 
-      {/* En-tÃªte */}
-      <div className="mb-3">
-        <p style={{ color: "#C4A882", fontSize: "11px", letterSpacing: "0.25em", textTransform: "uppercase", fontWeight: "600", marginBottom: "10px" }}>
-          Gestion Portefeuille
-        </p>
-        <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "clamp(2rem, 4vw, 3rem)", fontWeight: "300", letterSpacing: "0.02em", lineHeight: 1, color: "#fff" }}>
-          Nouveau Contact
-        </h1>
-      </div>
+      <form onSubmit={handleSubmit}>
 
-      {success && (
-        <div style={{ marginBottom: "24px", padding: "16px 24px", borderRadius: "16px", background: "rgba(52,211,153,0.12)", border: "1px solid rgba(52,211,153,0.30)", color: "#34d399", fontSize: "13px", fontWeight: "500" }}>
-          â Contact enregistrÃ© avec succÃ¨s.
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="liquid-glass p-5 rounded-[40px] border border-white/10 space-y-4">
-
-        {/* â  IDENTITÃ & RÃLE */}
-        <div>
-          <p style={sectionHead}>â  IdentitÃ© & RÃ´le</p>
-
-          <div className="mb-2">
-            <label style={labelStyle}>RÃ´le dans la transaction</label>
-            <div className="flex flex-wrap gap-3">
-              {[
-                { value: "acquereur", label: "AcquÃ©reur", sub: "En recherche",    icon: "ð", color: "#C4A882" },
-                { value: "vendeur",   label: "Vendeur",   sub: "Mandat de vente", icon: "ð ", color: "#34d399" },
-              ].map(r => (
-                <button type="button" key={r.value}
-                  onClick={() => setFormData(p => ({ ...p, type_client: r.value }))}
-                  style={{
-                    padding: "12px 22px", borderRadius: "14px", cursor: "pointer",
-                    transition: "all 0.2s", fontFamily: "'DM Sans', sans-serif",
-                    textAlign: "left", minWidth: "140px",
-                    border: formData.type_client === r.value ? `2px solid ${r.color}` : "1px solid rgba(255,255,255,0.12)",
-                    background: formData.type_client === r.value ? `${r.color}18` : "rgba(255,255,255,0.04)",
-                    color: formData.type_client === r.value ? r.color : "rgba(255,255,255,0.55)",
-                  }}
-                >
-                  <div style={{ fontSize: "18px", marginBottom: "4px" }}>{r.icon}</div>
-                  <div style={{ fontSize: "13px", fontWeight: "700" }}>{r.label}</div>
-                  <div style={{ fontSize: "10px", opacity: 0.65 }}>{r.sub}</div>
-                </button>
-              ))}
-            </div>
+        {/* ── Type client ── */}
+        <section className="liquid-glass rounded-[28px] border border-white/10 p-6 mb-5">
+          <p style={labelStyle}>⚡ Identité & Rôle</p>
+          <p style={{ ...labelStyle, marginBottom: "14px" }}>Rôle dans la transaction</p>
+          <div className="grid grid-cols-2 gap-3 mb-5">
+            {[
+              { val: "acquereur", title: "Acquéreur", sub: "En recherche",     icon: "🎯" },
+              { val: "vendeur",   title: "Vendeur",   sub: "Mandat de vente",  icon: "🏠" },
+            ].map(opt => (
+              <button type="button" key={opt.val}
+                onClick={() => set("type_client", opt.val)}
+                className={`p-4 rounded-2xl border text-left transition-all ${
+                  form.type_client === opt.val
+                    ? "bg-[#C87533]/20 border-[#C87533]/60 text-white"
+                    : "border-white/15 text-white/60 hover:border-white/30"
+                }`}>
+                <div className="text-2xl mb-2">{opt.icon}</div>
+                <div className="font-bold text-sm">{opt.title}</div>
+                <div className="text-[11px] opacity-60">{opt.sub}</div>
+              </button>
+            ))}
           </div>
 
-          <div className="grid md:grid-cols-3 gap-3">
-            <div className="md:col-span-2">
+          <div className="grid md:grid-cols-2 gap-4 mb-4">
+            <div>
               <label style={labelStyle}>Nom complet</label>
-              <input required type="text" style={inputStyle} value={formData.nom}
-                onFocus={focus} onBlur={blur} onChange={set("nom")} placeholder="PrÃ©nom Nom" />
+              <input style={inputStyle} placeholder="Prénom Nom"
+                value={form.nom} onChange={e => set("nom", e.target.value)} required />
             </div>
             <div>
-              <label style={labelStyle}>CatÃ©gorie</label>
-              <select style={inputStyle} value={formData.categorie_client} onFocus={focus} onBlur={blur} onChange={set("categorie_client")}>
-                <option value="standard"   className="bg-slate-900">Standard</option>
-                <option value="prestige"   className="bg-slate-900">Prestige</option>
+              <label style={labelStyle}>Catégorie</label>
+              <select style={inputStyle} value={form.categorie_client}
+                onChange={e => set("categorie_client", e.target.value)}>
+                <option value="standard"  className="bg-slate-900">Standard</option>
+                <option value="prestige"  className="bg-slate-900">Prestige</option>
                 <option value="patrimoine" className="bg-slate-900">Patrimoine</option>
               </select>
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-3 mt-2">
+          <div className="grid md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label style={labelStyle}>TÃ©lÃ©phone</label>
-              <input type="tel" style={inputStyle} value={formData.telephone} onFocus={focus} onBlur={blur} onChange={set("telephone")} />
+              <label style={labelStyle}>Téléphone</label>
+              <input style={inputStyle} type="tel" placeholder="0692 XX XX XX"
+                value={form.telephone} onChange={e => set("telephone", e.target.value)} />
             </div>
             <div>
               <label style={labelStyle}>Email</label>
-              <input type="email" style={inputStyle} value={formData.email} onFocus={focus} onBlur={blur} onChange={set("email")} />
-            </div>
-          </div>
-        </div>
-
-        {/* â¡ PRIX Â· TYPE Â· LOCALISATION */}
-        <div>
-          <p style={sectionHead}>â¡ Prix Â· Type Â· Localisation</p>
-
-          <div className="mb-2">
-            <label style={{ ...labelStyle, color: roleColor }}>
-              {formData.type_client === "vendeur" ? "Prix de vente (â¬)" : "Budget maximum (â¬)"}
-            </label>
-            <div style={{ position: "relative" }}>
-              <input type="number"
-                style={{ ...inputStyle, fontSize: "22px", padding: "18px 24px", borderColor: `${roleColor}50`, fontFamily: "'Cormorant Garamond', serif" }}
-                placeholder="Ex : 450 000"
-                value={formData.budget}
-                onFocus={(e) => e.target.style.borderColor = roleColor}
-                onBlur={(e)  => e.target.style.borderColor = `${roleColor}50`}
-                onChange={set("budget")}
-              />
-              {formData.budget && (
-                <span style={{ position: "absolute", right: "20px", top: "50%", transform: "translateY(-50%)", fontSize: "13px", color: roleColor, fontWeight: "600", opacity: 0.8 }}>
-                  {Number(formData.budget).toLocaleString()} â¬
-                </span>
-              )}
+              <input style={inputStyle} type="email" placeholder="email@exemple.com"
+                value={form.email} onChange={e => set("email", e.target.value)} />
             </div>
           </div>
 
-          <div className="mb-2">
+          <div>
+            <label style={labelStyle}>👤 Membre Alchemistria (apporteur)</label>
+            <select style={inputStyle} value={form.apporteur_affaires}
+              onChange={e => set("apporteur_affaires", e.target.value)}>
+              <option value="" className="bg-slate-900">— Sélectionner —</option>
+              {MEMBRES_ALCHEMISTRIA.map(m => (
+                <option key={m} value={m} className="bg-slate-900">{m}</option>
+              ))}
+            </select>
+          </div>
+        </section>
+
+        {/* ── Prix / Budget / Type / Localisation ── */}
+        <section className="liquid-glass rounded-[28px] border border-white/10 p-6 mb-5">
+          <p style={labelStyle}>💰 Prix · Type · Localisation</p>
+
+          <div className="mb-4">
+            <label style={labelStyle}>{isVendeur ? "Prix de vente (€)" : "Budget maximum (€)"}</label>
+            <input style={inputStyle} type="number"
+              placeholder={isVendeur ? "Ex : 350 000" : "Ex : 450 000"}
+              value={isVendeur ? form.prix_vente : form.budget}
+              onChange={e => set(isVendeur ? "prix_vente" : "budget", e.target.value)} />
+          </div>
+
+          <div className="mb-4">
             <label style={labelStyle}>Type de bien</label>
-            <div className="flex flex-wrap gap-3">
-              {TYPES_BIEN.map(({ icon, label }) => (
-                <button type="button" key={label} onClick={() => pick("type_bien", label)}
-                  style={{
-                    padding: "14px 22px", borderRadius: "14px", cursor: "pointer",
-                    transition: "all 0.2s", fontFamily: "'DM Sans', sans-serif",
-                    fontSize: "13px", fontWeight: "600",
-                    display: "flex", alignItems: "center", gap: "8px",
-                    border: formData.type_bien === label ? "2px solid #C4A882" : "1px solid rgba(255,255,255,0.14)",
-                    background: formData.type_bien === label ? "rgba(196,168,130,0.18)" : "rgba(255,255,255,0.04)",
-                    color: formData.type_bien === label ? "#C4A882" : "rgba(255,255,255,0.65)",
-                  }}
-                >
-                  <span style={{ fontSize: "20px" }}>{icon}</span>{label}
+            <div className="flex flex-wrap gap-2">
+              {TYPES_BIEN.map(t => (
+                <button type="button" key={t.label}
+                  onClick={() => set("type_bien", form.type_bien === t.label ? "" : t.label)}
+                  className={`px-4 py-2 rounded-full border text-sm transition-all ${
+                    form.type_bien === t.label
+                      ? "bg-[#C87533]/20 border-[#C87533]/60 text-white"
+                      : "border-white/15 text-white/50 hover:border-white/30"
+                  }`}>
+                  {t.icon} {t.label}
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-3">
+          <div className="grid md:grid-cols-2 gap-4 mb-4">
             <div>
               <label style={labelStyle}>Commune</label>
-              <select style={{ ...inputStyle, fontSize: "15px" }} value={formData.secteur} onFocus={focus} onBlur={blur} onChange={set("secteur")}>
-                <option value="" className="bg-slate-900">SÃ©lectionner...</option>
+              <select style={inputStyle} value={form.secteur}
+                onChange={e => set("secteur", e.target.value)}>
+                <option value="" className="bg-slate-900">Sélectionner...</option>
                 {SECTEURS.map(g => (
-                  <optgroup key={g.groupe} label={`ââ ${g.groupe}`}>
-                    {g.list.map(s => <option key={s} value={s} className="bg-slate-900">{s}</option>)}
+                  <optgroup key={g.groupe} label={g.groupe}>
+                    {g.list.map(c => <option key={c} value={c} className="bg-slate-900">{c}</option>)}
                   </optgroup>
                 ))}
               </select>
             </div>
             <div>
               <label style={labelStyle}>Projet</label>
-              <select style={inputStyle} value={formData.projet_client} onFocus={focus} onBlur={blur} onChange={set("projet_client")}>
-                <option value="rÃ©sidence principale"   className="bg-slate-900">RÃ©sidence principale</option>
-                <option value="rÃ©sidence secondaire"   className="bg-slate-900">RÃ©sidence secondaire</option>
-                <option value="investissement locatif" className="bg-slate-900">Investissement locatif</option>
-                <option value="location saisonniÃ¨re"   className="bg-slate-900">Location saisonniÃ¨re</option>
-                <option value="dÃ©fiscalisation"        className="bg-slate-900">DÃ©fiscalisation</option>
+              <select style={inputStyle} value={form.projet_client}
+                onChange={e => set("projet_client", e.target.value)}>
+                {["Résidence principale","Résidence secondaire","Investissement locatif","Défiscalisation"].map(p => (
+                  <option key={p} value={p} className="bg-slate-900">{p}</option>
+                ))}
               </select>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* â¢ RAFFINEMENTS */}
-        <div>
-          <p style={sectionHead}>â¢ Raffinements</p>
+        {/* ── Raffinements ── */}
+        <section className="liquid-glass rounded-[28px] border border-white/10 p-6 mb-5">
+          <p style={labelStyle}>🔧 Raffinements</p>
 
-          <div className="mb-2">
+          <div className="mb-4">
             <label style={labelStyle}>Nombre de chambres</label>
             <div className="flex flex-wrap gap-2">
               {CHAMBRES.map(c => (
-                <button type="button" key={c} onClick={() => pick("nb_chambres", c)}
-                  style={{
-                    padding: "10px 22px", borderRadius: "10px", cursor: "pointer",
-                    transition: "all 0.2s", fontFamily: "'Cormorant Garamond', serif",
-                    fontSize: "16px", fontWeight: "700",
-                    border: formData.nb_chambres === c ? "2px solid #C4A882" : "1px solid rgba(255,255,255,0.14)",
-                    background: formData.nb_chambres === c ? "rgba(196,168,130,0.18)" : "rgba(255,255,255,0.04)",
-                    color: formData.nb_chambres === c ? "#C4A882" : "rgba(255,255,255,0.60)",
-                  }}
-                >{c}</button>
+                <button type="button" key={c}
+                  onClick={() => set("nb_chambres", form.nb_chambres === c ? "" : c)}
+                  className={`px-4 py-2 rounded-full border text-sm transition-all ${
+                    form.nb_chambres === c
+                      ? "bg-white/20 border-white/50 text-white"
+                      : "border-white/15 text-white/50 hover:border-white/30"
+                  }`}>{c}</button>
               ))}
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-3 mb-2">
+          <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
-              <label style={labelStyle}>Surface habitable (mÂ²)</label>
-              <input type="number" style={inputStyle} placeholder="Ex : 120"
-                value={formData.surface_habitable} onFocus={focus} onBlur={blur} onChange={set("surface_habitable")} />
+              <label style={labelStyle}>Surface habitable (m²)</label>
+              <input style={inputStyle} type="number" placeholder="Ex : 120"
+                value={form.surface_habitable} onChange={e => set("surface_habitable", e.target.value)} />
             </div>
             <div>
-              <label style={labelStyle}>Surface terrain (mÂ²)</label>
-              <input type="number" style={inputStyle} placeholder="Ex : 800"
-                value={formData.surface_terrain} onFocus={focus} onBlur={blur} onChange={set("surface_terrain")} />
+              <label style={labelStyle}>Surface terrain (m²)</label>
+              <input style={inputStyle} type="number" placeholder="Ex : 500"
+                value={form.surface_terrain} onChange={e => set("surface_terrain", e.target.value)} />
             </div>
           </div>
 
-          <div className="mb-2">
-            <label style={labelStyle}>Zone / Altitude</label>
-            <div className="flex flex-wrap gap-2">
+          <div className="mb-4">
+            <label style={labelStyle}>Altitude</label>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               {ALTITUDE.map(a => (
-                <button type="button" key={a.value} onClick={() => pick("altitude", a.value)}
-                  style={{
-                    padding: "8px 16px", borderRadius: "10px", cursor: "pointer",
-                    transition: "all 0.18s", fontFamily: "'DM Sans', sans-serif",
-                    fontSize: "11px", fontWeight: "600",
-                    border: formData.altitude === a.value ? "2px solid #C4A882" : "1px solid rgba(255,255,255,0.14)",
-                    background: formData.altitude === a.value ? "rgba(196,168,130,0.18)" : "rgba(255,255,255,0.04)",
-                    color: formData.altitude === a.value ? "#C4A882" : "rgba(255,255,255,0.55)",
-                  }}
-                >
-                  <div>{a.label}</div>
-                  <div style={{ fontSize: "9px", opacity: 0.65, marginTop: "2px" }}>{a.sub}</div>
+                <button type="button" key={a.value}
+                  onClick={() => set("altitude", form.altitude === a.value ? "" : a.value)}
+                  className={`p-3 rounded-2xl border text-center transition-all ${
+                    form.altitude === a.value
+                      ? "bg-[#C87533]/20 border-[#C87533]/60 text-white"
+                      : "border-white/15 text-white/50 hover:border-white/30"
+                  }`}>
+                  <div className="text-sm font-medium">{a.label}</div>
+                  <div className="text-[10px] opacity-60">{a.sub}</div>
                 </button>
               ))}
             </div>
           </div>
 
           <div>
-            <label style={labelStyle}>Prestations & CritÃ¨res</label>
+            <label style={labelStyle}>Prestations recherchées</label>
             <div className="flex flex-wrap gap-2">
-              {CRITERES_BOOL.map(({ key, label, icon }) => (
-                <button type="button" key={key} onClick={() => toggle(key)}
-                  style={{
-                    padding: "9px 18px", borderRadius: "10px", cursor: "pointer",
-                    transition: "all 0.18s", fontFamily: "'DM Sans', sans-serif",
-                    fontSize: "12px", fontWeight: "600",
-                    display: "flex", alignItems: "center", gap: "6px",
-                    border: formData[key] ? "2px solid #C4A882" : "1px solid rgba(255,255,255,0.14)",
-                    background: formData[key] ? "rgba(196,168,130,0.18)" : "rgba(255,255,255,0.04)",
-                    color: formData[key] ? "#C4A882" : "rgba(255,255,255,0.55)",
-                  }}
-                >{icon} {label}</button>
+              {CRITERES_BOOL.map(c => (
+                <button type="button" key={c.key}
+                  onClick={() => set(c.key, !form[c.key])}
+                  className={`px-4 py-2 rounded-full border text-sm transition-all ${
+                    form[c.key]
+                      ? "bg-[#C87533]/20 border-[#C87533]/60 text-white"
+                      : "border-white/15 text-white/50 hover:border-white/30"
+                  }`}>
+                  {c.icon} {c.label}
+                </button>
               ))}
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* â£ NOTES & SCANNER */}
-        <div>
-          <p style={sectionHead}>â£ Notes & Scanner</p>
-          <div className="flex justify-between items-center mb-3">
-            <label style={{ ...labelStyle, marginBottom: 0 }}>Notes (WhatsApp / Keep / terrain)</label>
-            <button type="button" onClick={handleScanNotes} disabled={!formData.notes || scanning}
-              style={{
-                padding: "8px 18px", borderRadius: "20px", fontSize: "11px", fontWeight: "700",
-                letterSpacing: "0.12em", textTransform: "uppercase",
-                cursor: formData.notes ? "pointer" : "not-allowed",
-                border: "1px solid rgba(196,168,130,0.40)",
-                background: "rgba(196,168,130,0.10)", color: "#C4A882",
-                transition: "all 0.2s", fontFamily: "'DM Sans', sans-serif",
-                opacity: formData.notes ? 1 : 0.4,
-              }}
-            >
-              {scanning ? "â³ Analyse..." : "â¦ Scanner la note"}
-            </button>
-          </div>
-          <textarea rows="4"
-            style={{ ...inputStyle, resize: "vertical" }}
-            placeholder="Ex : Villa piscine 3 chambres vue mer Saint-Leu 850k..."
-            value={formData.notes}
-            onFocus={focus} onBlur={blur}
-            onChange={set("notes")}
-          />
-          {scanResult && (
-            <p style={{ marginTop: "8px", fontSize: "12px", fontStyle: "italic", color: scanResult.startsWith("â") ? "#34d399" : "rgba(255,255,255,0.45)" }}>
-              {scanResult}
-            </p>
+        {/* ── Notes ── */}
+        <section className="liquid-glass rounded-[28px] border border-white/10 p-6 mb-6">
+          <p style={labelStyle}>📝 Notes & Contexte</p>
+          {autoFill && (
+            <p className="text-[11px] text-[#C87533] mb-3">✨ Remplissage automatique activé depuis vos notes</p>
           )}
-        </div>
+          <textarea style={{ ...inputStyle, minHeight: "100px", resize: "vertical" }}
+            placeholder="Contexte, besoins spécifiques, remarques importantes…"
+            value={form.notes} onChange={handleNotesChange} />
+        </section>
 
-        {/* Table cible visible */}
-        <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", textAlign: "center", letterSpacing: "0.1em" }}>
-          â Enregistrement dans : <span style={{ color: "#C4A882" }}>{getTable(formData.type_client, formData.categorie_client)}</span>
-        </p>
+        {/* ── Erreur / Success ── */}
+        {error && (
+          <div className="mb-4 px-4 py-3 rounded-2xl bg-red-500/20 border border-red-500/30 text-red-400 text-sm">{error}</div>
+        )}
+        {success && (
+          <div className="mb-4 px-4 py-3 rounded-2xl bg-green-500/20 border border-green-500/30 text-green-400 text-sm font-medium">
+            ✅ Contact enregistré avec succès !
+          </div>
+        )}
 
-        <button type="submit" disabled={loading}
-          className="w-full py-2 rounded-full bg-white text-black font-bold uppercase tracking-[0.2em] text-xs hover:bg-[#C4A882] hover:text-white transition-all disabled:opacity-50">
-          {loading ? "Enregistrement en cours..." : "Enregistrer le dossier"}
+        {/* ── Submit ── */}
+        <button type="submit" disabled={saving}
+          className="w-full py-4 rounded-full bg-white text-black font-bold uppercase tracking-widest text-sm hover:bg-[#C87533] hover:text-white transition-all disabled:opacity-50 cursor-pointer">
+          {saving ? "Enregistrement…" : `Enregistrer ${isVendeur ? "le vendeur" : "l'acquéreur"}`}
         </button>
 
       </form>
