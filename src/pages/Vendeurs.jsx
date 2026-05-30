@@ -115,24 +115,25 @@ export default function Vendeurs() {
   }
 
   const card = {
-    backgroundColor: "rgba(8, 6, 4, 0.50)",
-    backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
-    border: "1px solid rgba(52,211,153,0.18)",
-    borderRadius: "24px", padding: "28px 32px", marginBottom: "20px",
+    backgroundColor: "var(--bg-card)",
+    backdropFilter: "blur(var(--blur))", WebkitBackdropFilter: "blur(var(--blur))",
+    border: "1px solid var(--border)",
+    borderRadius: "18px", padding: "16px 20px", marginBottom: "12px",
+    boxShadow: "var(--shadow)", color: "var(--text-primary)", transition: "all .2s",
   }
   const prixBox = {
-    background: "rgba(0,0,0,0.30)", border: "1px solid rgba(52,211,153,0.15)",
-    borderRadius: "12px", padding: "18px 22px", minWidth: "220px",
+    background: "var(--input-bg)", border: "1px solid var(--border)",
+    borderRadius: "10px", padding: "12px 16px", minWidth: "180px",
   }
   const notesBox = {
-    background: "rgba(0,0,0,0.25)", border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: "10px", padding: "14px 16px", minHeight: "80px",
+    background: "var(--input-bg)", border: "1px solid var(--border)",
+    borderRadius: "8px", padding: "10px 14px", minHeight: "60px",
   }
   const badgeStyle = (active) => ({
-    padding: "5px 14px", borderRadius: "20px", fontSize: "11px", fontWeight: "600",
+    padding: "4px 12px", borderRadius: "20px", fontSize: "10px", fontWeight: "600",
     letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer",
-    border: active ? "1px solid #34d399" : "1px solid rgba(255,255,255,0.15)",
-    background: active ? "rgba(52,211,153,0.15)" : "rgba(255,255,255,0.05)",
+    border: active ? "1px solid var(--accent)" : "1px solid var(--border)",
+    background: active ? "var(--accent-soft)" : "var(--input-bg)",
     color: active ? "#34d399" : "rgba(255,255,255,0.65)", transition: "all 0.2s",
   })
   const inlineInputStyle = {
@@ -187,7 +188,7 @@ export default function Vendeurs() {
       <div>
         {filteredClients.map((client) => (
           <div key={client.id} style={card}>
-            <div className="flex flex-col lg:flex-row justify-between gap-6">
+            <div className="flex flex-col lg:flex-row justify-between gap-3">
               <div className="flex-1">
                 <div className="flex flex-wrap items-center gap-3 mb-3">
                   <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "clamp(1.4rem, 2.5vw, 1.9rem)", fontWeight: "400" }}>{client.nom}</h2>
@@ -224,7 +225,7 @@ export default function Vendeurs() {
               </div>
             </div>
 
-            <div className="mt-6 grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div className="mt-3 grid grid-cols-1 xl:grid-cols-2 gap-3">
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <h3 style={sectionLabel}>Notes de visite</h3>

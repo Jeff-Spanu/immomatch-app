@@ -112,37 +112,40 @@ export default function Acquereurs() {
   }
 
   const card = {
-    backgroundColor: "rgba(8, 6, 4, 0.50)",
-    backdropFilter: "blur(24px)",
-    WebkitBackdropFilter: "blur(24px)",
-    border: "1px solid rgba(255,255,255,0.10)",
-    borderRadius: "24px",
-    padding: "28px 32px",
-    marginBottom: "20px",
+    backgroundColor: "var(--bg-card)",
+    backdropFilter: "blur(var(--blur))",
+    WebkitBackdropFilter: "blur(var(--blur))",
+    border: "1px solid var(--border)",
+    borderRadius: "18px",
+    padding: "16px 20px",
+    marginBottom: "12px",
+    boxShadow: "var(--shadow)",
+    color: "var(--text-primary)",
+    transition: "all .2s",
   }
 
   const budgetBox = {
-    background: "rgba(0,0,0,0.30)",
-    border: "1px solid rgba(255,255,255,0.10)",
-    borderRadius: "12px",
-    padding: "18px 22px",
-    minWidth: "220px",
+    background: "var(--input-bg)",
+    border: "1px solid var(--border)",
+    borderRadius: "10px",
+    padding: "12px 16px",
+    minWidth: "180px",
   }
 
   const notesBox = {
-    background: "rgba(0,0,0,0.25)",
-    border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: "10px",
-    padding: "14px 16px",
-    minHeight: "80px",
+    background: "var(--input-bg)",
+    border: "1px solid var(--border)",
+    borderRadius: "8px",
+    padding: "10px 14px",
+    minHeight: "60px",
   }
 
   const badgeStyle = (active) => ({
-    padding: "5px 14px", borderRadius: "20px", fontSize: "11px", fontWeight: "600",
+    padding: "4px 12px", borderRadius: "20px", fontSize: "10px", fontWeight: "600",
     letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer",
-    border: active ? "1px solid #C4A882" : "1px solid rgba(255,255,255,0.15)",
-    background: active ? "rgba(196,168,130,0.2)" : "rgba(255,255,255,0.05)",
-    color: active ? "#C4A882" : "rgba(255,255,255,0.65)",
+    border: active ? "1px solid var(--accent)" : "1px solid var(--border)",
+    background: active ? "var(--accent-soft)" : "var(--input-bg)",
+    color: active ? "var(--accent)" : "var(--text-secondary)",
     transition: "all 0.2s",
   })
 
@@ -161,13 +164,13 @@ export default function Acquereurs() {
   const blur  = (e) => e.target.style.borderColor = "rgba(255,255,255,0.12)"
 
   return (
-    <div style={{ fontFamily: "'DM Sans', sans-serif", padding: "28px", color: "#fff" }}>
+    <div style={{ fontFamily: "'DM Sans', sans-serif", padding: "16px 20px", color: "var(--text-primary)" }}>
 
-      <div className="mb-8">
-        <p style={{ color: "#C4A882", fontSize: "11px", letterSpacing: "0.25em", textTransform: "uppercase", fontWeight: "600", marginBottom: "10px" }}>
+      <div className="mb-4">
+        <p style={{ color: "var(--accent)", fontSize: "10px", letterSpacing: "0.25em", textTransform: "uppercase", fontWeight: "600", marginBottom: "6px" }}>
           Gestion Portefeuille
         </p>
-        <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "clamp(2rem, 4vw, 3rem)", fontWeight: "300", letterSpacing: "0.02em", lineHeight: 1 }}>
+        <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "clamp(1.6rem, 3vw, 2.4rem)", fontWeight: "300", letterSpacing: "0.02em", lineHeight: 1 }}>
           Acquéreurs
         </h1>
       </div>
@@ -176,7 +179,7 @@ export default function Acquereurs() {
         {clients.map((client) => (
           <div key={client.id} style={card}>
 
-            <div className="flex flex-col lg:flex-row justify-between gap-6">
+            <div className="flex flex-col lg:flex-row justify-between gap-3">
 
               {/* Infos client */}
               <div className="flex-1">
@@ -224,7 +227,7 @@ export default function Acquereurs() {
             </div>
 
             {/* Notes + Critères */}
-            <div className="mt-6 grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div className="mt-3 grid grid-cols-1 xl:grid-cols-2 gap-3">
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <h3 style={sectionLabel}>Notes</h3>

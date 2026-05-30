@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=DM+Sans:wght@300;400;500&family=Inter:wght@300;400;500;600&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -13,25 +13,124 @@
   input, textarea, select { text-shadow: none; }
 }
 
-@layer components {
+/* ─── THÈMES ────────────────────────────────────────────────────────────── */
 
-  /* Cartes sombres — fond assez opaque pour que le texte ressorte sans effort */
+/* Thème 1 : Dark (défaut actuel) */
+:root[data-theme="dark"], :root {
+  --bg-app:        #0f0e0d;
+  --bg-card:       rgba(8, 6, 4, 0.68);
+  --bg-card-hover: rgba(8, 6, 4, 0.80);
+  --bg-sidebar:    rgba(4, 3, 2, 0.92);
+  --text-primary:  #ffffff;
+  --text-secondary:rgba(255,255,255,0.60);
+  --text-muted:    rgba(255,255,255,0.35);
+  --border:        rgba(255,255,255,0.10);
+  --border-hover:  rgba(255,255,255,0.22);
+  --accent:        #C87533;
+  --accent-soft:   rgba(200,117,51,0.18);
+  --gold:          #D4AF37;
+  --input-bg:      rgba(255,255,255,0.05);
+  --input-border:  rgba(255,255,255,0.12);
+  --blur:          24px;
+  --shadow:        0 4px 24px rgba(0,0,0,0.40);
+}
+
+/* Thème 2 : Modern (bleu nuit / glassmorphism clair) */
+:root[data-theme="modern"] {
+  --bg-app:        #0a0f1e;
+  --bg-card:       rgba(15, 25, 50, 0.72);
+  --bg-card-hover: rgba(15, 25, 50, 0.88);
+  --bg-sidebar:    rgba(8, 14, 32, 0.95);
+  --text-primary:  #e8f0ff;
+  --text-secondary:rgba(180,200,255,0.70);
+  --text-muted:    rgba(120,150,220,0.50);
+  --border:        rgba(100,140,255,0.15);
+  --border-hover:  rgba(100,140,255,0.35);
+  --accent:        #4F8EF7;
+  --accent-soft:   rgba(79,142,247,0.18);
+  --gold:          #7C9EF7;
+  --input-bg:      rgba(255,255,255,0.06);
+  --input-border:  rgba(100,140,255,0.20);
+  --blur:          28px;
+  --shadow:        0 4px 32px rgba(0,20,80,0.50);
+}
+
+/* Thème 3 : Light (propre, pro) */
+:root[data-theme="light"] {
+  --bg-app:        #f0f4f8;
+  --bg-card:       rgba(255,255,255,0.90);
+  --bg-card-hover: rgba(255,255,255,1);
+  --bg-sidebar:    rgba(255,255,255,0.97);
+  --text-primary:  #1a1a2e;
+  --text-secondary:rgba(30,30,60,0.60);
+  --text-muted:    rgba(30,30,60,0.35);
+  --border:        rgba(0,0,0,0.08);
+  --border-hover:  rgba(0,0,0,0.18);
+  --accent:        #C87533;
+  --accent-soft:   rgba(200,117,51,0.12);
+  --gold:          #B8860B;
+  --input-bg:      rgba(0,0,0,0.04);
+  --input-border:  rgba(0,0,0,0.12);
+  --blur:          20px;
+  --shadow:        0 2px 16px rgba(0,0,0,0.10);
+}
+
+/* Thème 4 : Sunset (chaud, Réunion) */
+:root[data-theme="sunset"] {
+  --bg-app:        #1a0a00;
+  --bg-card:       rgba(40,15,5,0.75);
+  --bg-card-hover: rgba(50,20,5,0.88);
+  --bg-sidebar:    rgba(25,8,2,0.96);
+  --text-primary:  #fff5ec;
+  --text-secondary:rgba(255,200,150,0.70);
+  --text-muted:    rgba(200,130,80,0.50);
+  --border:        rgba(220,120,50,0.18);
+  --border-hover:  rgba(220,120,50,0.38);
+  --accent:        #FF7A2F;
+  --accent-soft:   rgba(255,122,47,0.18);
+  --gold:          #FFB347;
+  --input-bg:      rgba(255,150,80,0.06);
+  --input-border:  rgba(220,120,50,0.20);
+  --blur:          24px;
+  --shadow:        0 4px 28px rgba(100,30,0,0.45);
+}
+
+@layer components {
   .liquid-glass {
-    @apply rounded-xl border border-white/10 transition-all duration-200;
-    background: rgba(8, 6, 4, 0.62);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
+    @apply rounded-xl border transition-all duration-200;
+    background: var(--bg-card);
+    border-color: var(--border);
+    backdrop-filter: blur(var(--blur));
+    -webkit-backdrop-filter: blur(var(--blur));
+    box-shadow: var(--shadow);
+    color: var(--text-primary);
   }
   .liquid-glass:hover {
-    background: rgba(8, 6, 4, 0.70);
+    background: var(--bg-card-hover);
+    border-color: var(--border-hover);
   }
-
-  /* Lien actif sidebar */
   .accent-glow {
-    background: rgba(196, 168, 130, 0.18) !important;
-    border-left: 2px solid #C4A882 !important;
+    background: var(--accent-soft) !important;
+    border-left: 2px solid var(--accent) !important;
     border-radius: 0 12px 12px 0 !important;
-    color: #C4A882 !important;
+    color: var(--accent) !important;
   }
-
+  .theme-text        { color: var(--text-primary); }
+  .theme-text-sub    { color: var(--text-secondary); }
+  .theme-text-muted  { color: var(--text-muted); }
+  .theme-border      { border-color: var(--border); }
+  .theme-accent      { color: var(--accent); }
+  .theme-accent-bg   { background: var(--accent-soft); }
+  .theme-input {
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    color: var(--text-primary);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 13px;
+    outline: none;
+    width: 100%;
+    transition: border-color .2s;
+  }
+  .theme-input:focus { border-color: var(--accent); }
 }

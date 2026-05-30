@@ -1,3 +1,4 @@
+import ThemeSwitcher from "./ThemeSwitcher"
 import { useState } from "react"
 import { NavLink } from "react-router-dom"
 
@@ -86,10 +87,10 @@ export default function Sidebar() {
         </nav>
 
         {/* Footer */}
-        <div className="mt-auto pt-6 border-t border-white/10 hidden lg:block">
-          <p className="text-[10px] text-white/40 tracking-wide">ImmoMatch CRM v2</p>
-          <p className="text-[10px] text-white/30 mt-0.5">Matching intelligent immobilier</p>
-          <p className="text-[10px] text-[#C87533]/60 mt-1">🔥 Collectif Alchemistria · CONFIDENTIEL</p>
+        <div className="mt-auto pt-4 border-t border-white/10 hidden lg:block">
+          <ThemeSwitcher />
+          <p className="text-[10px] text-white/40 tracking-wide mt-3">ImmoMatch CRM v2</p>
+          <p className="text-[10px] text-[#C87533]/60 mt-0.5">🔥 Collectif Alchemistria · CONFIDENTIEL</p>
         </div>
       </aside>
 
