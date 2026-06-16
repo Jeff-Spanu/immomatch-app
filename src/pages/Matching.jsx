@@ -3,9 +3,9 @@ import { supabase } from "../supabase"
 import { lancerMatching, calculerMatchesMemoire } from "../services/matching"
 
 const PRIORITE_COLORS = {
-  haute:   { bg: 'bg-green-500/20',  border: 'border-green-500/40',  text: 'text-green-400',  label: '🔥 FORT'   },
-  moyenne: { bg: 'bg-amber-500/20',  border: 'border-amber-500/40',  text: 'text-amber-400',  label: '⚡ MOYEN'  },
-  basse:   { bg: 'bg-white/5',       border: 'border-white/10',      text: 'text-white/50',   label: '📎 FAIBLE' },
+  haute:   { bg: 'bg-green-900/75',  border: 'border-green-500/50',  text: 'text-green-400',  label: '🔥 FORT'   },
+  moyenne: { bg: 'bg-amber-900/75',  border: 'border-amber-500/50',  text: 'text-amber-400',  label: '⚡ MOYEN'  },
+  basse:   { bg: 'bg-gray-900/75',   border: 'border-white/20',      text: 'text-white/50',   label: '📎 FAIBLE' },
 }
 
 function ScoreBar({ label, value, color }) {
@@ -25,13 +25,12 @@ function MatchCard({ match }) {
   const p = PRIORITE_COLORS[match.priorite] || PRIORITE_COLORS.basse
   const detail = (() => { try { return JSON.parse(match.analyse_ia) } catch { return null } })()
 
-  // Support both DB format (match.vendeur) and memory format (match.vendeur direct)
   const v = match.vendeur || {}
   const a = match.acquereur || {}
   const score = match.score || match.total || 0
 
   return (
-    <div className={`${p.bg} ${p.border} border rounded-[20px] p-4 transition-all hover:scale-[1.005]`}>
+    <div className={`${p.bg} ${p.border} border rounded-[20px] p-4 transition-all hover:scale-[1.005] backdrop-blur-sm`}>
       <div className="flex items-center justify-between mb-3">
         <span className={`text-[10px] font-bold uppercase tracking-widest ${p.text}`}>{p.label}</span>
         <div className="flex items-center gap-2">
@@ -107,7 +106,6 @@ export default function Matching() {
       setMatches(data)
       setModeMemoire(false)
     } else {
-      // Fallback : calculer en mémoire
       const memMatches = await calculerMatchesMemoire()
       setMatches(memMatches.map(m => ({ ...m, score: m.total })))
       setModeMemoire(memMatches.length > 0)
@@ -120,7 +118,6 @@ export default function Matching() {
     setMsg(null)
     const { count, error, saveError } = await lancerMatching()
     if (error) {
-      // Fallback mémoire si erreur RLS
       const memMatches = await calculerMatchesMemoire()
       setMatches(memMatches.map(m => ({ ...m, score: m.total })))
       setModeMemoire(true)
