@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { supabase } from "../supabase"
-import { lancerMatching } from "../services/matching"
+import { lancerMatching, calculerMatchesMemoire } from "../services/matching"
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -14,36 +14,32 @@ export default function Dashboard() {
   useEffect(() => { fetchStats() }, [])
 
   async function fetchStats() {
-    const [vRes, aRes, mRes, topRes] = await Promise.all([
+    const [vRes, aRes, allMatches] = await Promise.all([
       supabase.from('vendeurs').select('id, prix_vente, budget, type_bien, secteur'),
       supabase.from('acquereurs').select('id, budget, secteur, notes'),
-      supabase.from('matches').select('id', { count: 'exact' }),
-      supabase.from('matches')
-        .select('score, priorite, vendeur:vendeur_id(nom, secteur), acquereur:acquereur_id(nom, budget, telephone)')
-        .order('score', { ascending: false })
-        .limit(5),
+      calculerMatchesMemoire(),
     ])
 
     const vData = vRes.data || []
     const aData = aRes.data || []
 
     const volume = vData.reduce((acc, v) => acc + (Number(v.prix_vente) || Number(v.budget) || 0), 0)
-    const urgents = aData.filter(a => a.notes && (a.notes.includes('URGENT') || a.notes.includes('🔴'))).length
+    const urgents = aData.filter(a => a.notes && (a.notes.includes('URGENT') || a.notes.includes('\u{1F534}'))).length
 
     setStats({
       vendeurs: vData.length,
       acquereurs: aData.length,
-      matches: mRes.count || 0,
+      matches: allMatches.length,
       volumeAffaires: volume,
     })
     setAlertes({
-      sansType:    vData.filter(v => !v.type_bien).length,
-      sansPrix:    vData.filter(v => !v.prix_vente && !v.budget).length,
-      sansBudget:  aData.filter(a => !a.budget || a.budget === 0).length,
+      sansType: vData.filter(v => !v.type_bien).length,
+      sansPrix: vData.filter(v => !v.prix_vente && !v.budget).length,
+      sansBudget: aData.filter(a => !a.budget || a.budget === 0).length,
       sansSecteur: vData.filter(v => !v.secteur).length,
       urgents,
     })
-    setTopMatches(topRes.data || [])
+    setTopMatches(allMatches.slice(0, 5))
   }
 
   async function handleLancerMatching() {
@@ -59,43 +55,39 @@ export default function Dashboard() {
 
   const fmt = (n) => n >= 1000000 ? (n / 1000000).toFixed(1) + ' M€' : n >= 1000 ? (n / 1000).toFixed(0) + ' K€' : n + ' €'
   const fmtBudget = (n) => n > 0 ? Number(n).toLocaleString('fr-FR') + ' €' : '—'
-  const hasAlertes = Object.values(alertes).some(v => v > 0)
+  const aAlertes = Object.values(alertes).some(v => v > 0)
 
   return (
     <div className="p-6 md:p-10">
-      {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-1">
           <h1 className="text-5xl font-serif tracking-tight text-white">Immo<span className="text-[#C87533]">Match</span></h1>
           <span className="text-[10px] font-bold uppercase tracking-widest text-[#C87533] border border-[#C87533]/40 px-2 py-1 rounded-full">Alchemistria</span>
         </div>
-        <p className="text-white/60 uppercase tracking-[0.4em] text-xs mt-2">Intelligence Immobilière & Pilotage</p>
+        <p className="text-white/60 uppercase tracking-[0.4em] text-xs mt-2">Intelligence Immobilière &amp; Pilotage</p>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard title="VOLUME D'AFFAIRES" value={fmt(stats.volumeAffaires)} sub="Total mandats vendeurs" color="border-[#C87533]/40" />
-        <StatCard title="MANDATS VENDEURS"  value={stats.vendeurs}            sub="Biens en stock"         color="border-white/20" />
-        <StatCard title="PORTEFEUILLE ACQ."  value={stats.acquereurs}          sub="Recherches actives"    color="border-white/20" />
-        <StatCard title="MATCHES ACTIFS"     value={stats.matches}             sub="Rapprochements IA"    color="border-[#D4AF37]/40" />
+        <StatCard titre="VOLUME D'AFFAIRES" valeur={fmt(stats.volumeAffaires)} sous="Total mandats vendeurs" couleur="border-[#C87533]/40" />
+        <StatCard titre="MANDATS VENDEURS" valeur={stats.vendeurs} sous="Biens en stock" couleur="border-white/20" />
+        <StatCard titre="PORTEFEUILLE ACQ." valeur={stats.acquereurs} sous="Recherches actives" couleur="border-white/20" />
+        <StatCard titre="MATCHES ACTIFS" valeur={stats.matches} sous="Rapprochements IA" couleur="border-[#D4AF37]/40" />
       </div>
 
-      {/* Alertes données */}
-      {hasAlertes && (
+      {aAlertes && (
         <div className="liquid-glass border border-amber-500/30 rounded-[24px] p-5 mb-6">
           <p className="text-[10px] font-bold uppercase tracking-widest text-amber-400 mb-3">⚠️ Points d'attention — Données à compléter</p>
           <div className="flex flex-wrap gap-2">
-            {alertes.urgents > 0    && <AlertBadge color="red"    label={`🔴 ${alertes.urgents} acquéreur(s) URGENT à rappeler`} />}
-            {alertes.sansBudget > 0 && <AlertBadge color="amber"  label={`${alertes.sansBudget} acquéreur(s) sans budget → matching impossible`} />}
-            {alertes.sansType > 0   && <AlertBadge color="amber"  label={`${alertes.sansType} vendeur(s) sans type de bien`} />}
-            {alertes.sansPrix > 0   && <AlertBadge color="amber"  label={`${alertes.sansPrix} vendeur(s) sans prix de vente`} />}
-            {alertes.sansSecteur > 0 && <AlertBadge color="white" label={`${alertes.sansSecteur} vendeur(s) sans secteur`} />}
+            {alertes.urgents > 0 && <AlertBadge couleur="rouge" label={`🔴 ${alertes.urgents} acquéreur(s) URGENT à rappeler`} />}
+            {alertes.sansBudget > 0 && <AlertBadge couleur="ambre" label={`${alertes.sansBudget} acquéreur(s) sans budget → matching impossible`} />}
+            {alertes.sansType > 0 && <AlertBadge couleur="ambre" label={`${alertes.sansType} vendeur(s) sans type de bien`} />}
+            {alertes.sansPrix > 0 && <AlertBadge couleur="ambre" label={`${alertes.sansPrix} vendeur(s) sans prix de vente`} />}
+            {alertes.sansSecteur > 0 && <AlertBadge couleur="blanc" label={`${alertes.sansSecteur} vendeur(s) sans secteur`} />}
           </div>
         </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        {/* Matching */}
         <div className="liquid-glass p-6 rounded-[32px] border border-white/10 hover:border-[#C87533]/40 transition-all">
           <h3 className="text-xl font-light mb-2 italic text-white">Prêt pour un match ?</h3>
           <p className="text-white/60 text-sm mb-4 leading-relaxed">
@@ -115,7 +107,6 @@ export default function Dashboard() {
           </button>
         </div>
 
-        {/* Prestige */}
         <div className="liquid-glass p-6 rounded-[40px] border border-white/10 bg-gradient-to-br from-[#D4AF37]/5 to-transparent">
           <h3 className="text-xl font-light mb-2 italic text-[#D4AF37]">Focus Prestige</h3>
           <p className="text-white/60 text-sm mb-4 leading-relaxed">Sélection Gold — biens d'exception, clients patrimoniaux.</p>
@@ -128,28 +119,28 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Top 5 matches */}
       {topMatches.length > 0 && (
         <div className="liquid-glass border border-white/10 rounded-[28px] p-6">
           <div className="flex items-center justify-between mb-4">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-white/60">🔗 Top Rapprochements</p>
-            <button onClick={() => navigate('/matching')} className="text-[10px] text-[#C87533] hover:text-[#C87533]/80 uppercase tracking-widest">Voir tous →</button>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-white/60">🔗 Meilleurs rapprochements</p>
+            <button onClick={() => navigate('/matching')} className="text-[10px] text-[#C87533] hover:text-[#C87533]/80 uppercase tracking-widest">Voir tout →</button>
           </div>
           <div className="flex flex-col gap-3">
             {topMatches.map((m, i) => {
-              const scoreColor = m.score >= 80 ? 'text-green-400' : m.score >= 55 ? 'text-amber-400' : 'text-white/50'
-              const scoreBg    = m.score >= 80 ? 'bg-green-500/10 border-green-500/20' : m.score >= 55 ? 'bg-amber-500/10 border-amber-500/20' : 'bg-white/5 border-white/10'
+              const score = m.total
+              const scoreColor = score >= 80 ? 'text-green-400' : score >= 55 ? 'text-amber-400' : 'text-white/50'
+              const scoreBg = score >= 80 ? 'bg-green-500/10 border-green-500/20' : score >= 55 ? 'bg-amber-500/10 border-amber-500/20' : 'bg-white/5 border-white/10'
               return (
                 <div key={i} className={`${scoreBg} border rounded-2xl px-4 py-3 grid grid-cols-[48px_1fr_auto_1fr] gap-3 items-center`}>
-                  <span className={`text-xl font-light ${scoreColor}`}>{m.score}%</span>
+                  <span className={`text-xl font-light ${scoreColor}`}>{score}%</span>
                   <div>
-                    <p className="text-[9px] text-[#C87533] uppercase tracking-widest mb-0.5">Acquéreur</p>
+                    <p className="text-[9px] text-[#C87533] uppercase tracking-wide mb-0.5">Acquéreur</p>
                     <p className="text-white text-sm font-medium leading-tight">{m.acquereur?.nom || '—'}</p>
                     <p className="text-white/40 text-[10px]">{fmtBudget(m.acquereur?.budget)}</p>
                   </div>
                   <span className="text-white/30 text-lg">→</span>
                   <div className="text-right">
-                    <p className="text-[9px] text-green-400 uppercase tracking-widest mb-0.5">Vendeur</p>
+                    <p className="text-[9px] text-green-400 uppercase tracking-wider mb-0.5">Vendeur</p>
                     <p className="text-white text-sm font-medium leading-tight">{m.vendeur?.nom || '—'}</p>
                     <p className="text-white/40 text-[10px]">{m.vendeur?.secteur || '—'}</p>
                   </div>
@@ -163,23 +154,23 @@ export default function Dashboard() {
   )
 }
 
-function StatCard({ title, value, sub, color }) {
+function StatCard({ titre, valeur, sous, couleur }) {
   return (
-    <div className={`liquid-glass p-5 rounded-[28px] border ${color} hover:scale-[1.02] transition-transform`}>
-      <p className="text-[10px] uppercase tracking-widest text-white/60 mb-2 font-bold">{title}</p>
-      <h2 className="text-4xl font-light text-white mb-1">{value}</h2>
-      <p className="text-xs text-white/50">{sub}</p>
+    <div className={`liquid-glass p-5 rounded-[28px] border ${couleur} hover:scale-[1.02] transition-transform`}>
+      <p className="text-[10px] uppercase tracking-widest text-white/60 mb-2 font-bold">{titre}</p>
+      <h2 className="text-4xl font-light text-white mb-1">{valeur}</h2>
+      <p className="text-xs text-white/50">{sous}</p>
     </div>
   )
 }
 
-function AlertBadge({ label, color }) {
+function AlertBadge({ label, couleur }) {
   const styles = {
-    red:   'bg-red-500/15 border-red-500/30 text-red-300',
-    amber: 'bg-amber-500/15 border-amber-500/30 text-amber-300',
-    white: 'bg-white/5 border-white/15 text-white/50',
+    rouge: 'bg-red-500/15 border-red-500/30 text-red-300',
+    ambre: 'bg-amber-500/15 border-amber-500/30 text-amber-300',
+    blanc: 'bg-white/5 border-white/15 text-white/50',
   }
   return (
-    <span className={`${styles[color]} border rounded-full px-3 py-1 text-[11px] font-medium`}>{label}</span>
+    <span className={`${styles[couleur]} border rounded-full px-3 py-1 text-[11px] font-medium`}>{label}</span>
   )
 }
