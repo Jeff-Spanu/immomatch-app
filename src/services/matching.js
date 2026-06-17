@@ -1,120 +1,137 @@
-import { supabase } from '../supabase'
+import { supabase } from "../supabase"
 
-// ─── Scoring weights ────────────────────────────────────────────────────────
-const W = { TYPE_BIEN: 35, SECTEUR: 30, BUDGET: 25, CRITERES: 10 }
-
-function scoreBudget(budget, prix) {
-  if (!prix || prix === 0) return 50
-  if (budget >= prix) return 100
-  const ratio = budget / prix
-  if (ratio >= 0.90) return 80
-  if (ratio >= 0.80) return 50
-  if (ratio >= 0.70) return 20
-  return 0
+// ── Algorithme de scoring ─────────────────────────────────────────────────────
+//  Points attribués par critère (total max = 100)
+const POIDS = {
+  type_bien:    30,   // même type de bien
+  secteur:      25,   // même commune
+  budget:       20,   // budget acquéreur >= prix vendeur (ou ≤ +10%)
+  nb_chambres:  10,   // même configuration
+  bool_criteres: 15,  // piscine, vue mer, etc. (3 pts chacun, 5 critères max)
 }
 
-function scoreCriteres(vendeur, acquereur) {
-  const crits = ['vue_mer', 'vue_montagne', 'piscine', 'garage', 'dependance', 'plain_pied']
-  let matched = 0, total = 0
-  for (const c of crits) {
-    if (acquereur[c] === true) { total++; if (vendeur[c] === true) matched++ }
+function scorerMatch(acquereur, vendeur) {
+  let total = 0
+  const details = {}
+
+  // Type de bien
+  if (acquereur.type_bien && vendeur.type_bien &&
+      acquereur.type_bien.toLowerCase() === vendeur.type_bien.toLowerCase()) {
+    total += POIDS.type_bien
+    details.type_bien = POIDS.type_bien
   }
-  return total === 0 ? 50 : Math.round((matched / total) * 100)
-}
 
-function scoreSecteur(secteurV, secteurA) {
-  if (!secteurV || !secteurA) return 0
-  const v = secteurV.toLowerCase().trim()
-  const a = secteurA.toLowerCase().trim()
-  if (v === a) return 100
-  if (v.includes(a.split(' ')[0]) || a.includes(v.split(' ')[0])) return 70
-  return 0
-}
+  // Secteur / commune
+  if (acquereur.secteur && vendeur.secteur &&
+      acquereur.secteur.toLowerCase() === vendeur.secteur.toLowerCase()) {
+    total += POIDS.secteur
+    details.secteur = POIDS.secteur
+  }
 
-export function computeScore(vendeur, acquereur) {
-  const typeMatch = vendeur.type_bien && acquereur.type_bien &&
-    vendeur.type_bien.toLowerCase() === acquereur.type_bien.toLowerCase()
-  const sSecteur  = scoreSecteur(vendeur.secteur, acquereur.secteur)
-  const sType     = typeMatch ? 100 : 0
-  const prixV     = Number(vendeur.prix_vente) || Number(vendeur.budget) || 0
-  const sBudget   = scoreBudget(Number(acquereur.budget) || 0, prixV)
-  const sCriteres = scoreCriteres(vendeur, acquereur)
-  const total = Math.round(
-    (sType * W.TYPE_BIEN + sSecteur * W.SECTEUR + sBudget * W.BUDGET + sCriteres * W.CRITERES) / 100
-  )
-  return { total, detail: { type: sType, secteur: sSecteur, budget: sBudget, criteres: sCriteres }, matched: { type: typeMatch, secteur: sSecteur >= 70 } }
-}
-
-function priorite(score) {
-  if (score >= 80) return 'haute'
-  if (score >= 55) return 'moyenne'
-  return 'basse'
-}
-
-// Calcule les matches en mémoire et tente de les sauvegarder
-export async function lancerMatching() {
-  const [{ data: vendeurs, error: eV }, { data: acquereurs, error: eA }] = await Promise.all([
-    supabase.from('vendeurs').select('*'),
-    supabase.from('acquereurs').select('*'),
-  ])
-  if (eV || eA) return { count: 0, error: (eV || eA).message }
-  if (!vendeurs?.length || !acquereurs?.length) return { count: 0, error: 'Aucune donnée en base' }
-
-  const matches = []
-  for (const v of vendeurs) {
-    for (const a of acquereurs) {
-      if (!v.secteur && !v.type_bien) continue
-      if (!a.budget && !a.secteur) continue
-      const score = computeScore(v, a)
-      if (score.total >= 40) {
-        matches.push({
-          vendeur_id: v.id, acquereur_id: a.id,
-          score: score.total, priorite: priorite(score.total),
-          analyse_ia: JSON.stringify(score.detail),
-        })
-      }
+  // Budget vs prix de vente
+  const budget = Number(acquereur.budget) || 0
+  const prix   = Number(vendeur.prix_vente) || Number(vendeur.budget) || 0
+  if (budget > 0 && prix > 0) {
+    if (budget >= prix) {
+      // Budget couvre le prix → score plein
+      total += POIDS.budget
+      details.budget = POIDS.budget
+    } else if (budget >= prix * 0.85) {
+      // Budget à moins de 15% → score partiel
+      const partial = Math.round(POIDS.budget * (budget / prix))
+      total += partial
+      details.budget = partial
     }
   }
-  matches.sort((a, b) => b.score - a.score)
-  const top = matches.slice(0, 150)
 
-  // Supprimer les anciens matches
-  await supabase.from('matches').delete().neq('id', 0)
-
-  // Insérer par batch de 20 pour éviter les timeouts
-  if (top.length > 0) {
-    const batchSize = 20
-    for (let i = 0; i < top.length; i += batchSize) {
-      const batch = top.slice(i, i + batchSize)
-      const { error } = await supabase.from('matches').insert(batch)
-      if (error) {
-        console.error('Insert error:', error)
-        // Retourner les matches calculés même si la sauvegarde échoue
-        return { count: top.length, error: null, matches: top, saveError: error.message }
-      }
-    }
+  // Nombre de chambres
+  if (acquereur.nb_chambres && vendeur.nb_chambres &&
+      acquereur.nb_chambres === vendeur.nb_chambres) {
+    total += POIDS.nb_chambres
+    details.nb_chambres = POIDS.nb_chambres
   }
-  return { count: top.length, error: null }
+
+  // Critères booléens (3 pts chacun, 5 max = 15 pts)
+  const BOOLS = ["piscine", "vue_mer", "vue_montagne", "garage", "dependance"]
+  let boolScore = 0
+  BOOLS.forEach(key => {
+    if (acquereur[key] && vendeur[key]) boolScore += 3
+  })
+  total += Math.min(boolScore, POIDS.bool_criteres)
+  if (boolScore > 0) details.bool_criteres = Math.min(boolScore, POIDS.bool_criteres)
+
+  return { total: Math.min(total, 100), details }
 }
 
-// Calcule les matches en mémoire uniquement (sans sauvegarder)
+// ── Calculer les matches en mémoire (sans sauvegarder) ───────────────────────
 export async function calculerMatchesMemoire() {
-  const [{ data: vendeurs }, { data: acquereurs }] = await Promise.all([
-    supabase.from('vendeurs').select('*'),
-    supabase.from('acquereurs').select('*'),
+  const [vRes, aRes] = await Promise.all([
+    supabase.from("vendeurs").select("*"),
+    supabase.from("acquereurs").select("*"),
   ])
-  if (!vendeurs || !acquereurs) return []
+
+  const vendeurs   = vRes.data  || []
+  const acquereurs = aRes.data  || []
 
   const matches = []
-  for (const v of vendeurs) {
-    for (const a of acquereurs) {
-      if (!v.secteur && !v.type_bien) continue
-      if (!a.budget && !a.secteur) continue
-      const score = computeScore(v, a)
-      if (score.total >= 40) {
-        matches.push({ vendeur: v, acquereur: a, ...score, priorite: priorite(score.total), analyse_ia: JSON.stringify(score.detail) })
+  for (const acquereur of acquereurs) {
+    for (const vendeur of vendeurs) {
+      const { total, details } = scorerMatch(acquereur, vendeur)
+      if (total >= 30) {   // seuil minimum de pertinence
+        matches.push({ acquereur, vendeur, total, details })
       }
     }
   }
-  return matches.sort((a, b) => b.total - a.total).slice(0, 150)
+
+  // Trier par score décroissant
+  return matches.sort((a, b) => b.total - a.total)
+}
+
+// ── Lancer le matching et sauvegarder dans Supabase ──────────────────────────
+export async function lancerMatching() {
+  try {
+    const matches = await calculerMatchesMemoire()
+    if (matches.length === 0) return { count: 0 }
+
+    // Supprimer les anciens matches
+    await supabase.from("matches").delete().neq("id", "00000000-0000-0000-0000-000000000000")
+
+    // Insérer les nouveaux
+    const rows = matches.map(m => ({
+      acquereur_id:    m.acquereur.id,
+      vendeur_id:      m.vendeur.id,
+      score_total:     m.total,
+      score_details:   m.details,
+      acquereur_nom:   m.acquereur.nom  || null,
+      vendeur_nom:     m.vendeur.nom    || null,
+      vendeur_secteur: m.vendeur.secteur || null,
+      created_at:      new Date().toISOString(),
+    }))
+
+    const { error } = await supabase.from("matches").insert(rows)
+    if (error) return { count: 0, error: error.message }
+
+    return { count: matches.length }
+  } catch (e) {
+    return { count: 0, error: e.message }
+  }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+export function scoreColor(score) {
+  if (score >= 80) return "var(--score-high)"
+  if (score >= 55) return "var(--score-mid)"
+  return "var(--score-low)"
+}
+
+export function scoreBg(score) {
+  if (score >= 80) return "var(--success-bg)"
+  if (score >= 55) return "var(--warn-bg)"
+  return "var(--border2)"
+}
+
+export function scoreBorder(score) {
+  if (score >= 80) return "var(--success)"
+  if (score >= 55) return "var(--warn)"
+  return "var(--border)"
 }
