@@ -1,203 +1,292 @@
-import { useEffect, useState } from "react"
-import { supabase } from "../supabase"
-import { lancerMatching, calculerMatchesMemoire } from "../services/matching"
+import { useState, useEffect } from "react"
+import { calculerMatchesMemoire, lancerMatching, scoreColor, scoreBg, scoreBorder } from "../services/matching"
 
-const PRIORITE_COLORS = {
-  haute:   { bg: 'bg-green-900/75',  border: 'border-green-500/50',  text: 'text-green-400',  label: '🔥 FORT'   },
-  moyenne: { bg: 'bg-amber-900/75',  border: 'border-amber-500/50',  text: 'text-amber-400',  label: '⚡ MOYEN'  },
-  basse:   { bg: 'bg-gray-900/75',   border: 'border-white/20',      text: 'text-white/50',   label: '📎 FAIBLE' },
+const lbl = {
+  display: "block", fontSize: "10px", fontWeight: "700",
+  letterSpacing: "0.12em", color: "var(--text2)",
+  marginBottom: "4px", textTransform: "uppercase",
 }
 
-function ScoreBar({ label, value, color }) {
-  return (
-    <div className="flex items-center gap-2 text-[10px]">
-      <span className="text-white/40 w-14 shrink-0">{label}</span>
-      <div className="flex-1 h-1 bg-white/10 rounded-full overflow-hidden">
-        <div className={`h-full rounded-full transition-all ${color}`} style={{ width: value + '%' }} />
-      </div>
-      <span className="text-white/60 w-7 text-right">{value}%</span>
-    </div>
-  )
-}
-
-function MatchCard({ match }) {
-  const [open, setOpen] = useState(false)
-  const p = PRIORITE_COLORS[match.priorite] || PRIORITE_COLORS.basse
-  const detail = (() => { try { return JSON.parse(match.analyse_ia) } catch { return null } })()
-
-  const v = match.vendeur || {}
-  const a = match.acquereur || {}
-  const score = match.score || match.total || 0
-
-  return (
-    <div className={`${p.bg} ${p.border} border rounded-[20px] p-4 transition-all hover:scale-[1.005] backdrop-blur-sm`}>
-      <div className="flex items-center justify-between mb-3">
-        <span className={`text-[10px] font-bold uppercase tracking-widest ${p.text}`}>{p.label}</span>
-        <div className="flex items-center gap-2">
-          <span className="text-2xl font-light text-white">{score}%</span>
-          <button onClick={() => setOpen(!open)} className="text-white/30 hover:text-white/70 text-sm transition-colors">
-            {open ? '▲' : '▼'}
-          </button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-center mb-3">
-        <div>
-          <p className="text-[10px] text-[#C87533] uppercase tracking-widest mb-1">ACQUÉREUR</p>
-          <p className="text-white font-semibold text-sm leading-tight">{a.nom || '—'}</p>
-          <p className="text-white/60 text-xs mt-0.5">{a.budget > 0 ? Number(a.budget).toLocaleString('fr-FR') + ' €' : '—'} · {a.secteur || '—'}</p>
-          {a.telephone && <p className="text-white/50 text-[11px] mt-1">📞 {a.telephone}</p>}
-          {a.apporteur_affaires && <p className="text-[#D4AF37]/80 text-[11px]">👤 {a.apporteur_affaires}</p>}
-        </div>
-        <div className="flex flex-col items-center gap-1">
-          <div className="w-7 h-7 rounded-full bg-[#C87533]/20 border border-[#C87533]/40 flex items-center justify-center text-[#C87533] text-sm">💛</div>
-          <div className="flex gap-1 flex-wrap justify-center">
-            {match.matched?.type    && <span className="text-[10px] bg-white/15 rounded-full px-2 py-0.5 text-white/90 font-medium">TYPE ✓</span>}
-            {match.matched?.secteur && <span className="text-[10px] bg-white/15 rounded-full px-2 py-0.5 text-white/90 font-medium">SECTEUR ✓</span>}
-          </div>
-        </div>
-        <div className="text-right">
-          <p className="text-[10px] text-green-400 uppercase tracking-widest mb-1">VENDEUR</p>
-          <p className="text-white font-semibold text-sm leading-tight">{v.nom || '—'}</p>
-          <p className="text-white/60 text-xs mt-0.5">{(v.prix_vente || v.budget) > 0 ? Number(v.prix_vente || v.budget).toLocaleString('fr-FR') + ' €' : '—'} · {v.secteur || '—'}</p>
-          {v.telephone && <p className="text-white/50 text-[11px] mt-1">📞 {v.telephone}</p>}
-          {v.apporteur_affaires && <p className="text-[#D4AF37]/80 text-[11px]">👤 {v.apporteur_affaires}</p>}
-        </div>
-      </div>
-
-      {open && detail && (
-        <div className="border-t border-white/10 pt-3 mt-2 space-y-1.5">
-          <ScoreBar label="Type"     value={detail.type}     color="bg-blue-400" />
-          <ScoreBar label="Secteur"  value={detail.secteur}  color="bg-green-400" />
-          <ScoreBar label="Budget"   value={detail.budget}   color="bg-amber-400" />
-          <ScoreBar label="Critères" value={detail.criteres} color="bg-purple-400" />
-        </div>
-      )}
-
-      <button
-        onClick={() => window.open(`tel:${a.telephone}`)}
-        className="mt-3 w-full py-2 rounded-full border border-white/20 text-white/80 text-xs uppercase tracking-widest hover:bg-white/10 transition-all font-medium"
-      >
-        Organiser la visite
-      </button>
-    </div>
-  )
+const fmtBudget = (n) => {
+  const v = Number(n) || 0
+  if (!v) return "—"
+  return v >= 1000000
+    ? (v / 1000000).toFixed(2).replace(/\.?0+$/, "") + " M€"
+    : v >= 1000 ? (v / 1000).toFixed(0) + " K€" : v + " €"
 }
 
 export default function Matching() {
   const [matches, setMatches] = useState([])
   const [loading, setLoading] = useState(true)
   const [running, setRunning] = useState(false)
-  const [minScore, setMinScore] = useState(40)
-  const [filterPriorite, setFilterPriorite] = useState('all')
   const [msg, setMsg] = useState(null)
-  const [modeMemoire, setModeMemoire] = useState(false)
+  const [filterMin, setFilterMin] = useState(0)
+  const [search, setSearch] = useState("")
 
-  useEffect(() => { fetchMatches() }, [])
+  useEffect(() => { loadMatches() }, [])
 
-  async function fetchMatches() {
+  async function loadMatches() {
     setLoading(true)
-    const { data } = await supabase
-      .from('matches')
-      .select(`*, vendeur:vendeur_id(*), acquereur:acquereur_id(*)`)
-      .order('score', { ascending: false })
-
-    if (data && data.length > 0) {
-      setMatches(data)
-      setModeMemoire(false)
-    } else {
-      const memMatches = await calculerMatchesMemoire()
-      setMatches(memMatches.map(m => ({ ...m, score: m.total })))
-      setModeMemoire(memMatches.length > 0)
-    }
+    const result = await calculerMatchesMemoire()
+    setMatches(result)
     setLoading(false)
   }
 
   async function handleRelancer() {
-    setRunning(true)
-    setMsg(null)
-    const { count, error, saveError } = await lancerMatching()
-    if (error) {
-      const memMatches = await calculerMatchesMemoire()
-      setMatches(memMatches.map(m => ({ ...m, score: m.total })))
-      setModeMemoire(true)
-      setMsg({ ok: true, text: `${memMatches.length} rapprochements calculés (mode temps réel)` })
-      setRunning(false)
-      return
-    }
-    if (saveError) {
-      setMsg({ ok: true, text: `${count} rapprochements calculés ✓` })
-    } else {
-      setMsg({ ok: true, text: `${count} rapprochements sauvegardés ✓` })
-    }
-    await fetchMatches()
+    setRunning(true); setMsg(null)
+    const { count, error } = await lancerMatching()
     setRunning(false)
+    if (error) { setMsg({ type: "error", text: "Erreur : " + error }); return }
+    setMsg({ type: "success", text: `${count} rapprochements calculés et sauvegardés.` })
+    await loadMatches()
+    setTimeout(() => setMsg(null), 3000)
   }
 
   const filtered = matches.filter(m => {
-    const score = m.score || m.total || 0
-    if (score < minScore) return false
-    if (filterPriorite !== 'all' && m.priorite !== filterPriorite) return false
-    return true
+    const q = search.toLowerCase()
+    const matchSearch = !q
+      || (m.acquereur?.nom || "").toLowerCase().includes(q)
+      || (m.vendeur?.nom   || "").toLowerCase().includes(q)
+      || (m.vendeur?.secteur || "").toLowerCase().includes(q)
+    const matchScore = m.total >= filterMin
+    return matchSearch && matchScore
   })
 
+  const top   = filtered.filter(m => m.total >= 80)
+  const moyen = filtered.filter(m => m.total >= 55 && m.total < 80)
+  const faible= filtered.filter(m => m.total < 55)
+
   return (
-    <div className="p-4 md:p-6">
-      <div className="mb-6">
-        <p className="text-white/40 text-xs uppercase tracking-widest mb-1">Intelligence Artificielle</p>
-        <h1 className="text-4xl font-serif text-white mb-1">Rapprochements <span className="text-[#C87533]">Automatiques</span></h1>
-        <p className="text-white/50 text-sm">Algorithme multi-critères · Type · Secteur · Budget · Prestations</p>
-        {modeMemoire && <p className="text-amber-400/70 text-xs mt-1">⚡ Mode temps réel — résultats calculés à la volée</p>}
-      </div>
+    <div style={{ padding: "clamp(16px, 4vw, 40px)", paddingBottom: "88px", maxWidth: "960px" }} className="lg:pb-10">
 
-      <div className="flex flex-wrap gap-3 items-center mb-6">
-        <div className="liquid-glass rounded-2xl px-4 py-2 flex items-center gap-3 border border-white/10">
-          <span className="text-white/60 text-xs uppercase tracking-widest">Matches</span>
-          <span className="text-2xl font-light text-white">{filtered.length}</span>
+      {/* En-tête */}
+      <div style={{ marginBottom: "20px" }}>
+        <p style={{ ...lbl, marginBottom: "2px" }}>IA</p>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+          <div>
+            <h1 style={{ fontSize: "clamp(28px, 6vw, 36px)", fontWeight: "700", color: "var(--text)", letterSpacing: "-0.5px", marginBottom: "4px" }}>
+              Matching <span style={{ color: "var(--accent)" }}>🔗</span>
+            </h1>
+            <p style={{ fontSize: "13px", color: "var(--text2)" }}>
+              {matches.length} rapprochements calculés · {top.length} excellents
+            </p>
+          </div>
+          <button
+            onClick={handleRelancer}
+            disabled={running}
+            style={{
+              background: "var(--accent)", color: "#fff", border: "none",
+              borderRadius: "999px", padding: "10px 20px",
+              fontSize: "12px", fontWeight: "700", letterSpacing: "0.08em",
+              textTransform: "uppercase", cursor: running ? "not-allowed" : "pointer",
+              opacity: running ? 0.6 : 1, transition: "opacity 0.2s",
+            }}
+          >
+            {running ? "Calcul…" : "↺ Relancer"}
+          </button>
         </div>
-
-        <div className="liquid-glass rounded-2xl px-4 py-2 flex items-center gap-3 border border-white/10 flex-1 min-w-[200px]">
-          <span className="text-white/60 text-xs uppercase tracking-widest shrink-0">Score min</span>
-          <input type="range" min="20" max="90" value={minScore}
-            onChange={e => setMinScore(Number(e.target.value))}
-            className="flex-1 accent-[#C87533]" />
-          <span className="text-white/80 text-xs w-8 text-right">{minScore}%</span>
-        </div>
-
-        <div className="flex gap-2">
-          {['all', 'haute', 'moyenne', 'basse'].map(p => (
-            <button key={p} onClick={() => setFilterPriorite(p)}
-              className={`px-3 py-1.5 rounded-full text-[10px] uppercase tracking-widest border transition-all ${
-                filterPriorite === p ? 'bg-[#C87533] border-[#C87533] text-white' : 'border-white/20 text-white/50 hover:border-white/40'
-              }`}>
-              {p === 'all' ? 'Tous' : p}
-            </button>
-          ))}
-        </div>
-
-        <button onClick={handleRelancer} disabled={running}
-          className="ml-auto px-5 py-2 rounded-full bg-white text-black text-[10px] font-bold uppercase tracking-widest hover:bg-[#C87533] hover:text-white transition-all disabled:opacity-50 cursor-pointer">
-          {running ? '⏳ Calcul...' : '↻ Relancer'}
-        </button>
       </div>
 
       {msg && (
-        <div className={`mb-4 px-4 py-2 rounded-xl text-sm ${msg.ok ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'}`}>
-          {msg.text}
-        </div>
+        <div style={{
+          marginBottom: "16px", padding: "12px 16px", borderRadius: "14px",
+          background: msg.type === "success" ? "var(--success-bg)" : "var(--error-bg)",
+          border: `1px solid ${msg.type === "success" ? "var(--success)" : "var(--error)"}`,
+          color: msg.type === "success" ? "var(--success)" : "var(--error)",
+          fontSize: "13px", fontWeight: "500",
+        }}>{msg.text}</div>
       )}
 
+      {/* Filtres */}
+      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "16px" }}>
+        <input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Rechercher par nom ou commune…"
+          style={{
+            flex: "1 1 200px", background: "var(--input-bg)",
+            border: "1.5px solid var(--border)", borderRadius: "10px",
+            padding: "9px 14px", color: "var(--text)", fontSize: "13px",
+            outline: "none", fontFamily: "inherit",
+          }}
+        />
+        {[0, 55, 80].map(min => (
+          <button key={min} onClick={() => setFilterMin(min)} style={{
+            padding: "9px 14px", borderRadius: "999px", fontSize: "12px", fontWeight: "600", cursor: "pointer",
+            background: filterMin === min ? "var(--accent)" : "transparent",
+            color: filterMin === min ? "#fff" : "var(--text2)",
+            border: filterMin === min ? "none" : "1.5px solid var(--border)",
+            transition: "all 0.15s",
+          }}>
+            {min === 0 ? "Tous" : min === 55 ? "≥55%" : "≥80%"}
+          </button>
+        ))}
+      </div>
+
+      {/* Résultats */}
       {loading ? (
-        <div className="text-center text-white/40 py-20">Chargement des rapprochements...</div>
+        <div style={{ textAlign: "center", padding: "48px", color: "var(--text3)" }}>Calcul en cours…</div>
       ) : filtered.length === 0 ? (
-        <div className="text-center text-white/40 py-20">
-          <p className="text-2xl mb-2">🔍</p>
-          <p>Aucun rapprochement avec ce filtre.</p>
-          <p className="text-xs mt-1">Baissez le score minimum ou relancez le matching.</p>
+        <div style={{ background: "var(--card-bg)", border: "1px solid var(--card-border)", borderRadius: "16px", textAlign: "center", padding: "48px 24px" }}>
+          <p style={{ fontSize: "32px", marginBottom: "12px" }}>🔗</p>
+          <p style={{ color: "var(--text2)", fontSize: "15px", marginBottom: "6px" }}>Aucun rapprochement</p>
+          <p style={{ color: "var(--text3)", fontSize: "13px" }}>Ajoutez des vendeurs et acquéreurs, puis lancez le matching.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-          {filtered.map((m, i) => <MatchCard key={m.id || i} match={m} />)}
+        <>
+          {top.length > 0 && (
+            <Section titre={`🟢 Excellents — ≥80% (${top.length})`} matches={top} />
+          )}
+          {moyen.length > 0 && (
+            <Section titre={`🟡 Bons — 55–79% (${moyen.length})`} matches={moyen} />
+          )}
+          {faible.length > 0 && filterMin < 55 && (
+            <Section titre={`⚪ Faibles — <55% (${faible.length})`} matches={faible} collapsed />
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
+function Section({ titre, matches, collapsed = false }) {
+  const [open, setOpen] = useState(!collapsed)
+
+  return (
+    <div style={{ marginBottom: "20px" }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          width: "100%", background: "none", border: "none", cursor: "pointer",
+          padding: "0 0 10px", textAlign: "left",
+        }}
+      >
+        <p style={{ fontSize: "11px", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--text2)" }}>
+          {titre}
+        </p>
+        <span style={{ color: "var(--text3)", fontSize: "12px", transform: open ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▾</span>
+      </button>
+
+      {open && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          {matches.map((m, i) => <MatchCard key={i} match={m} />)}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function MatchCard({ match: m }) {
+  const [open, setOpen] = useState(false)
+  const score = m.total
+
+  return (
+    <div style={{
+      background: scoreBg(score),
+      border: `1px solid ${scoreBorder(score)}`,
+      borderRadius: "16px",
+      overflow: "hidden",
+    }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          display: "grid",
+          gridTemplateColumns: "52px 1fr auto 1fr",
+          gap: "10px", alignItems: "center",
+          padding: "14px 16px",
+          width: "100%", background: "transparent", border: "none", cursor: "pointer", textAlign: "left",
+        }}
+      >
+        {/* Score */}
+        <div style={{ textAlign: "center" }}>
+          <span style={{ fontSize: "22px", fontWeight: "300", color: scoreColor(score), lineHeight: 1 }}>{score}</span>
+          <p style={{ fontSize: "10px", color: "var(--text3)", letterSpacing: "0.08em" }}>%</p>
+        </div>
+
+        {/* Acquéreur */}
+        <div>
+          <p style={{ fontSize: "9px", color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "2px" }}>Acquéreur</p>
+          <p style={{ fontSize: "14px", fontWeight: "600", color: "var(--text)", lineHeight: 1.2 }}>{m.acquereur?.nom || "—"}</p>
+          <p style={{ fontSize: "12px", color: "var(--text2)" }}>{fmtBudget(m.acquereur?.budget)}</p>
+        </div>
+
+        <span style={{ color: "var(--text3)", fontSize: "18px" }}>→</span>
+
+        {/* Vendeur */}
+        <div style={{ textAlign: "right" }}>
+          <p style={{ fontSize: "9px", color: "var(--success)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "2px" }}>Vendeur</p>
+          <p style={{ fontSize: "14px", fontWeight: "600", color: "var(--text)", lineHeight: 1.2 }}>{m.vendeur?.nom || "—"}</p>
+          <p style={{ fontSize: "12px", color: "var(--text2)" }}>{m.vendeur?.secteur || "—"}</p>
+        </div>
+      </button>
+
+      {open && (
+        <div style={{ padding: "0 16px 16px", borderTop: "1px solid var(--border2)" }}>
+          {/* Détail scores */}
+          <div style={{ marginTop: "12px" }}>
+            <p style={{ fontSize: "9px", fontWeight: "700", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--text3)", marginBottom: "8px" }}>
+              Détail du score
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+              {Object.entries(m.details || {}).map(([key, pts]) => (
+                <span key={key} style={{
+                  fontSize: "11px", padding: "4px 10px", borderRadius: "999px",
+                  background: "var(--card-bg)", border: "1px solid var(--border)",
+                  color: "var(--text2)",
+                }}>
+                  {key.replace(/_/g, " ")} +{pts}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Badge co-closing */}
+          {(m.acquereur?.tipser || m.vendeur?.tipser) && (
+            <div style={{
+              marginTop: "12px",
+              padding: "8px 12px",
+              borderRadius: "10px",
+              background: "var(--accent-bg)",
+              border: "1px solid var(--accent)",
+              display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap",
+            }}>
+              <span style={{ fontSize: "11px", fontWeight: "700", color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.1em" }}>🤝 Co-closing</span>
+              {m.acquereur?.tipser && (
+                <span style={{ fontSize: "12px", color: "var(--text2)" }}>
+                  Acq. → <strong style={{ color: "var(--accent)" }}>{m.acquereur.tipser}</strong>
+                </span>
+              )}
+              {m.acquereur?.tipser && m.vendeur?.tipser && (
+                <span style={{ fontSize: "11px", color: "var(--text3)" }}>·</span>
+              )}
+              {m.vendeur?.tipser && (
+                <span style={{ fontSize: "12px", color: "var(--text2)" }}>
+                  Vend. → <strong style={{ color: "var(--success)" }}>{m.vendeur.tipser}</strong>
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Fiche acquéreur */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginTop: "14px" }}>
+            <div>
+              <p style={{ fontSize: "9px", fontWeight: "700", color: "var(--accent)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "6px" }}>Acquéreur</p>
+              {m.acquereur?.telephone && <p style={{ fontSize: "12px", color: "var(--text2)", marginBottom: "2px" }}>📞 {m.acquereur.telephone}</p>}
+              {m.acquereur?.type_bien && <p style={{ fontSize: "12px", color: "var(--text2)", marginBottom: "2px" }}>🏠 {m.acquereur.type_bien}</p>}
+              {m.acquereur?.secteur   && <p style={{ fontSize: "12px", color: "var(--text2)", marginBottom: "2px" }}>📍 {m.acquereur.secteur}</p>}
+              {m.acquereur?.nb_chambres && <p style={{ fontSize: "12px", color: "var(--text2)" }}>{m.acquereur.nb_chambres}</p>}
+              {m.acquereur?.tipser && <p style={{ fontSize: "12px", color: "var(--accent)", marginTop: "4px" }}>👤 Via {m.acquereur.tipser}</p>}
+            </div>
+            <div>
+              <p style={{ fontSize: "9px", fontWeight: "700", color: "var(--success)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "6px" }}>Vendeur</p>
+              {m.vendeur?.telephone && <p style={{ fontSize: "12px", color: "var(--text2)", marginBottom: "2px" }}>📞 {m.vendeur.telephone}</p>}
+              {m.vendeur?.type_bien && <p style={{ fontSize: "12px", color: "var(--text2)", marginBottom: "2px" }}>🏠 {m.vendeur.type_bien}</p>}
+              {m.vendeur?.secteur   && <p style={{ fontSize: "12px", color: "var(--text2)", marginBottom: "2px" }}>📍 {m.vendeur.secteur}</p>}
+              {m.vendeur?.surface_habitable && <p style={{ fontSize: "12px", color: "var(--text2)" }}>{m.vendeur.surface_habitable} m²</p>}
+              {m.vendeur?.tipser && <p style={{ fontSize: "12px", color: "var(--success)", marginTop: "4px" }}>👤 Via {m.vendeur.tipser}</p>}
+            </div>
+          </div>
         </div>
       )}
     </div>
