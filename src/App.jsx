@@ -30,7 +30,7 @@ function AppLayout() {
       <div className="fixed inset-0 z-0 bg-[#1C1917] lg:hidden" />
       <div className="relative z-10 flex flex-col md:flex-row w-full h-full overflow-hidden">
         <Sidebar />
-        <main className="flex-1 p-4 md:p-10 overflow-y-auto overflow-x-hidden w-full">
+        <main className="flex-1 p-4 pb-24 md:p-10 md:pb-10 overflow-y-auto overflow-x-hidden w-full">
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/nouveau-client" element={<NouveauClient />} />
