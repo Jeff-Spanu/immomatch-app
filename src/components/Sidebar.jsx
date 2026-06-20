@@ -1,9 +1,22 @@
 import ThemeSwitcher from "./ThemeSwitcher"
 import { useState } from "react"
 import { NavLink } from "react-router-dom"
+import { useTheme } from "../hooks/useTheme"
+
+// Raccourcis de la barre du bas mobile
+const MOBILE_NAV = [
+  { to: "/",            icon: "⊞",  label: "Accueil" },
+  { to: "/clients",     icon: "👥", label: "Clients" },
+  { to: "/acquereurs",  icon: "🎯", label: "Acquér." },
+  { to: "/vendeurs",    icon: "🏠", label: "Vendeurs" },
+  { to: "/matching",    icon: "🔗", label: "Match" },
+  { to: "/import-csv",  icon: "↑",  label: "Import" },
+]
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false)
+  const { theme, setTheme } = useTheme()
+  const isLight = theme === "light"
 
   function linkClass(isActive) {
     return `
@@ -15,24 +28,36 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* 📱 BARRE MOBILE */}
+      {/* 📱 BARRE MOBILE (haut) */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-[#14120F]/90 backdrop-blur-md border-b border-white/10 px-5 flex items-center justify-between z-50">
         <img
           src="/Logo_Premium.png"
           alt="ImmoMatch"
           style={{ height: "40px", width: "auto", objectFit: "contain" }}
         />
-        <button onClick={() => setIsOpen(!isOpen)} className="text-white p-2 focus:outline-none">
-          {isOpen ? (
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          ) : (
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          )}
-        </button>
+        <div className="flex items-center gap-1">
+          {/* Bouton clair / sombre */}
+          <button
+            onClick={() => setTheme(isLight ? "dark" : "light")}
+            aria-label="Basculer clair / sombre"
+            className="text-white p-2 focus:outline-none"
+            style={{ fontSize: "18px", lineHeight: 1 }}
+          >
+            {isLight ? "🌙" : "☀️"}
+          </button>
+          {/* Hamburger */}
+          <button onClick={() => setIsOpen(!isOpen)} className="text-white p-2 focus:outline-none" aria-label="Menu">
+            {isOpen ? (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* 🖥️ SIDEBAR */}
@@ -98,6 +123,42 @@ export default function Sidebar() {
       {isOpen && (
         <div onClick={() => setIsOpen(false)} className="lg:hidden fixed inset-0 bg-black/50 z-30 backdrop-blur-sm" />
       )}
+
+      {/* 📱 BARRE DU BAS MOBILE */}
+      <nav
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex items-stretch"
+        style={{
+          background: "var(--bg-sidebar)",
+          borderTop: "1px solid var(--border)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        }}
+      >
+        {MOBILE_NAV.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.to === "/"}
+            onClick={() => setIsOpen(false)}
+            style={({ isActive }) => ({
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "2px",
+              padding: "8px 2px",
+              textDecoration: "none",
+              color: isActive ? "var(--accent)" : "var(--text-muted)",
+              WebkitTapHighlightColor: "transparent",
+            })}
+          >
+            <span style={{ fontSize: "19px", lineHeight: 1 }}>{item.icon}</span>
+            <span style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "-0.2px" }}>{item.label}</span>
+          </NavLink>
+        ))}
+      </nav>
     </>
   )
 }
