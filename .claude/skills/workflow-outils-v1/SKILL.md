@@ -53,5 +53,6 @@ Home staging virtuel gratuit = pas de solution satisfaisante à ce jour.
 | Outil | Décision | Raison |
 |-------|----------|--------|
 | nano-banana-pro skill | Non installé | Déjà dans CapCut |
+| banana-claude (AgriciDaniel) | Non installé | Fausse bonne idée : doublon Nano Banana (déjà dans CapCut), clé API Google + coûts par image, scripts à installer, mauvais outil (génère au lieu de corriger), risque images trompeuses en immobilier |
 | BoxBrownie | En veille | Payant |
 | Google Drive | Exclu | Dropbox local |
